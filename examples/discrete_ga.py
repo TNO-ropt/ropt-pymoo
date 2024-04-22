@@ -3,13 +3,13 @@ from typing import Any, Dict
 
 import numpy as np
 from numpy.typing import NDArray
-from ruamel import yaml
 from ropt.config.enopt import EnOptConfig
 from ropt.enums import ConstraintType, EventType
 from ropt.evaluator import EvaluatorContext, EvaluatorResult
 from ropt.events import OptimizationEvent
 from ropt.optimization import EnsembleOptimizer
 from ropt.results import FunctionResults
+from ruamel import yaml
 
 # For convenience we use a YAML file to store the optimizer options:
 options = yaml.YAML(typ="safe", pure=True).load(Path("discrete_ga.yml"))
