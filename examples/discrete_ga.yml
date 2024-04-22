@@ -1,0 +1,33 @@
+parameters:
+  pop_size: 20
+  sampling:
+    object: operators.sampling.rnd.IntegerRandomSampling
+  crossover:
+    object: operators.crossover.sbx.SBX
+    parameters:
+      prob: 1.0
+      eta: 3.0
+      vtype: float
+      repair:
+        object: operators.repair.rounding.RoundingRepair
+  mutation:
+    object: operators.mutation.pm.PM
+    parameters:
+      prob: 1.0
+      eta: 3.0
+      vtype: float
+      repair:
+        object: operators.repair.rounding.RoundingRepair
+  eliminate_duplicates: True
+
+termination:
+  name: max_gen.MaximumGenerationTermination
+  parameters:
+    n_max_gen: 10
+
+constraints:
+  name: as_penalty.ConstraintsAsPenalty
+  parameters:
+    penalty: 100.0
+
+seed: 1234
