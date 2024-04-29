@@ -163,7 +163,7 @@ class ParametersConfig(_ParametersBaseModel):
         if not module_name:
             try:
                 return get_termination(name, **self.termination.parameters)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 msg = f"Failed to run get_termination for: {name}"
                 raise ValueError(msg) from exc
         termination_class = _get_class(
@@ -183,7 +183,7 @@ class ParametersConfig(_ParametersBaseModel):
             ValueError: When the constraints object is not found.
 
         Returns:
-            An `pymoo` constraints class.
+            A `pymoo` constraints class.
         """
         if self.constraints is None:
             return None
