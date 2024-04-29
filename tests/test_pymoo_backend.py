@@ -5,7 +5,8 @@ from typing import Any, Dict, cast
 import numpy as np
 import pytest
 from numpy.typing import NDArray
-from ropt.enums import ConstraintType
+from ropt.enums import ConstraintType, EventType, OptimizerExitCode
+from ropt.events import OptimizationEvent
 from ropt.optimization import EnsembleOptimizer
 
 
@@ -307,3 +308,98 @@ def test_pymoo_constraint_handling(
     )
     assert result is not None
     assert np.allclose(result.evaluations.variables, [-0.05, 0.0, 0.45], atol=0.02)
+
+
+def test_pymoo_bound_constraints_with_failure(
+    enopt_config: Dict[str, Any], evaluator: Any, test_functions: Any
+) -> None:
+    enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
+    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
+    enopt_config["optimizer"]["algorithm"] = "soo.nonconvex.de.DE"
+    enopt_config["optimizer"]["parallel"] = True
+    enopt_config["optimizer"]["max_functions"] = 800
+    enopt_config["realizations"] = {"realization_min_success": 0}
+    optimizer = EnsembleOptimizer(evaluator())
+    result1 = optimizer.start_optimization(
+        plan=[
+            {"config": enopt_config},
+            {"optimizer": {"id": "opt"}},
+            {"tracker": {"id": "optimum", "source": "opt"}},
+        ],
+    )
+    assert result1 is not None
+    assert np.allclose(result1.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02)
+
+    counter = 0
+
+    def _add_nan(x: Any) -> Any:
+        nonlocal counter
+        counter += 1
+        if counter == 2:
+            counter = 0
+            return np.nan
+        return test_functions[0](x)
+
+    optimizer = EnsembleOptimizer(evaluator((_add_nan, test_functions[1])))
+    result2 = optimizer.start_optimization(
+        plan=[
+            {"config": enopt_config},
+            {"optimizer": {"id": "opt"}},
+            {"tracker": {"id": "optimum", "source": "opt"}},
+        ],
+    )
+    assert result2 is not None
+    assert np.allclose(result2.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02)
+    assert not np.all(
+        np.equal(result1.evaluations.variables, result2.evaluations.variables)
+    )
+
+
+def test_pymoo_bound_constraints_no_failure_handling(
+    enopt_config: Dict[str, Any], evaluator: Any, test_functions: Any
+) -> None:
+    enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
+    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
+    enopt_config["optimizer"]["algorithm"] = "soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["parallel"] = True
+    enopt_config["optimizer"]["max_functions"] = 800
+
+    optimizer = EnsembleOptimizer(evaluator())
+    result1 = optimizer.start_optimization(
+        plan=[
+            {"config": enopt_config},
+            {"optimizer": {"id": "opt"}},
+            {"tracker": {"id": "optimum", "source": "opt"}},
+        ],
+    )
+    assert result1 is not None
+    assert np.allclose(result1.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02)
+
+    enopt_config["realizations"] = {"realization_min_success": 0}
+
+    counter = 0
+
+    def _add_nan(x: Any) -> Any:
+        nonlocal counter
+        counter += 1
+        if counter == 2:
+            counter = 0
+            return np.nan
+        return test_functions[0](x)
+
+    def handle_finished(event: OptimizationEvent) -> None:
+        assert event.exit_code == OptimizerExitCode.TOO_FEW_REALIZATIONS
+
+    optimizer = EnsembleOptimizer(evaluator((_add_nan, test_functions[1])))
+    optimizer.add_observer(EventType.FINISHED_OPTIMIZER_STEP, handle_finished)
+    result2 = optimizer.start_optimization(
+        plan=[
+            {"config": enopt_config},
+            {"optimizer": {"id": "opt"}},
+            {"tracker": {"id": "optimum", "source": "opt"}},
+        ],
+    )
+    assert result2 is not None
+    assert not np.all(
+        np.equal(result1.evaluations.variables, result2.evaluations.variables)
+    )

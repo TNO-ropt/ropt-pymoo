@@ -35,6 +35,9 @@ if TYPE_CHECKING:
 
 _OUTPUT_FILE = "optimizer_output"
 
+# These algorithms do not allow NaN fucntion values:
+_NO_FAILURE_HANDLING = {"NelderMead"}
+
 
 @dataclass
 class _Constraints:
@@ -171,6 +174,7 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
             output_file = create_output_path(_OUTPUT_FILE, output_dir, suffix=".txt")
 
         self._stdout = sys.stdout
+        self._algorithm = self._parameters.algorithm
         with Path(output_file).open("a", encoding="utf-8") as output, redirect_stdout(
             output
         ):
@@ -279,9 +283,18 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
             self._cached_function = None
         if self._cached_function is None:
             self._cached_variables = variables.copy()
+            allow_nan = True
+            for algorithm in _NO_FAILURE_HANDLING:
+                if algorithm in self._algorithm:
+                    allow_nan = False
             with redirect_stdout(self._stdout):
                 function, _ = self._optimizer_callback(
-                    variables, return_functions=True, return_gradients=False
+                    variables,
+                    return_functions=True,
+                    return_gradients=False,
+                    allow_nan=allow_nan,
                 )
+                if allow_nan:
+                    function = np.where(np.isnan(function), np.inf, function)
             self._cached_function = function.copy()
         return self._cached_function
