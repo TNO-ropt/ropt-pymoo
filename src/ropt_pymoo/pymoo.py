@@ -140,6 +140,11 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
         self._cached_function: Optional[NDArray[np.float64]] = None
         self._stdout: TextIO
 
+        self._allow_nan = True
+        for algorithm in _NO_FAILURE_HANDLING:
+            if algorithm in self._parameters.algorithm:
+                self._allow_nan = False
+
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
 
@@ -174,7 +179,7 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
             output_file = create_output_path(_OUTPUT_FILE, output_dir, suffix=".txt")
 
         self._stdout = sys.stdout
-        self._algorithm = self._parameters.algorithm
+
         with Path(output_file).open("a", encoding="utf-8") as output, redirect_stdout(
             output
         ):
@@ -185,6 +190,16 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
                 seed=self._parameters.seed,
                 verbose=output_dir is not None,
             )
+
+    @property
+    def allow_nan(self) -> bool:
+        """Whether NaN is allowed.
+
+        See the [ropt.plugins.optimizer.protocol.Optimizer][] protocol.
+
+        # noqa
+        """
+        return self._allow_nan
 
     def _get_bounds(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._config.variables.lower_bounds
@@ -283,18 +298,13 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
             self._cached_function = None
         if self._cached_function is None:
             self._cached_variables = variables.copy()
-            allow_nan = True
-            for algorithm in _NO_FAILURE_HANDLING:
-                if algorithm in self._algorithm:
-                    allow_nan = False
             with redirect_stdout(self._stdout):
                 function, _ = self._optimizer_callback(
                     variables,
                     return_functions=True,
                     return_gradients=False,
-                    allow_nan=allow_nan,
                 )
-                if allow_nan:
+                if self._allow_nan:
                     function = np.where(np.isnan(function), np.inf, function)
             self._cached_function = function.copy()
         return self._cached_function
