@@ -20,9 +20,9 @@ def _load_from_file(name: str, sub_path: Optional[str] = None) -> Any:
     return module
 
 
-def test_rosenbrock_cmaes(tmp_path: Path) -> None:
+def test_rosenbrock_de(tmp_path: Path) -> None:
     os.chdir(tmp_path)
-    module = _load_from_file("rosenbrock_cmaes")
+    module = _load_from_file("rosenbrock_nm")
     module.main()
 
 

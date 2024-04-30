@@ -17,7 +17,7 @@ CONFIG: Dict[str, Any] = {
     },
     "optimizer": {
         "backend": "pymoo",
-        "algorithm": "soo.nonconvex.cmaes.CMAES",
+        "algorithm": "soo.nonconvex.nelder.NelderMead",
         "options": {
             "termination": ("n_iter", 30),
         },
