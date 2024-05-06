@@ -1,5 +1,3 @@
-# pylint: disable=protected-access
-
 from typing import Any, Dict, cast
 
 import numpy as np
@@ -17,8 +15,7 @@ def enopt_config_fixture() -> Dict[str, Any]:
             "initial_values": [0.2, 0.0, 0.1],
         },
         "optimizer": {
-            "backend": "pymoo",
-            "algorithm": "soo.nonconvex.nelder.NelderMead",
+            "method": "soo.nonconvex.nelder.NelderMead",
         },
         "objective_functions": {
             "weights": [0.75, 0.25],
@@ -315,7 +312,7 @@ def test_pymoo_bound_constraints_with_failure(
 ) -> None:
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    enopt_config["optimizer"]["algorithm"] = "soo.nonconvex.de.DE"
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.de.DE"
     enopt_config["optimizer"]["parallel"] = True
     enopt_config["optimizer"]["max_functions"] = 800
     enopt_config["realizations"] = {"realization_min_success": 0}
@@ -360,7 +357,7 @@ def test_pymoo_bound_constraints_no_failure_handling(
 ) -> None:
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    enopt_config["optimizer"]["algorithm"] = "soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
     enopt_config["optimizer"]["parallel"] = True
     enopt_config["optimizer"]["max_functions"] = 800
 

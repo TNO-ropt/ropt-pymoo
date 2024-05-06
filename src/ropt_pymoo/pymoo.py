@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import importlib
+import inspect
 import os
 import sys
 from contextlib import redirect_stdout
@@ -24,6 +26,11 @@ import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.enums import ConstraintType
+from ropt.plugins.optimizer.protocol import (
+    OptimizerCallback,
+    OptimizerPluginProtocol,
+    OptimizerProtocol,
+)
 from ropt.plugins.optimizer.utils import create_output_path, filter_linear_constraints
 
 from ._config import ParametersConfig
@@ -113,15 +120,15 @@ class _Problem(Problem):  # type: ignore
         )
 
 
-class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
-    """Backend class for optimization via pymoo."""
+class PyMooOptimizer(OptimizerProtocol):
+    """Plugin class for optimization via pymoo."""
 
     def __init__(
         self, config: EnOptConfig, optimizer_callback: OptimizerCallback
     ) -> None:
         """Initialize the optimizer implemented by the pymoo plugin.
 
-        See the [ropt.plugins.optimizer.protocol.OptimizerBackend][] protocol.
+        See the [ropt.plugins.optimizer.protocol.OptimizerProtocol][] protocol.
 
         # noqa
         """
@@ -132,7 +139,8 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
             if isinstance(self._config.optimizer.options, dict)
             else {}
         )
-        options["algorithm"] = self._config.optimizer.algorithm
+        _, _, method = self._config.optimizer.method.rpartition("/")
+        options["algorithm"] = method
         self._parameters = ParametersConfig.model_validate(options)
         self._bounds = self._get_bounds()
         self._constraints = self._get_constraints()
@@ -148,7 +156,7 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
 
-        See the [ropt.plugins.optimizer.protocol.OptimizerBackend][] protocol.
+        See the [ropt.plugins.optimizer.protocol.Optimizer][] protocol.
 
         # noqa
         """
@@ -308,3 +316,38 @@ class PyMooOptimizer:  # pylint: disable=too-many-instance-attributes
                     function = np.where(np.isnan(function), np.inf, function)
             self._cached_function = function.copy()
         return self._cached_function
+
+
+class PyMooOptimizerPlugin(OptimizerPluginProtocol):
+    """Default filter transform plugin class."""
+
+    def create(
+        self, config: EnOptConfig, optimizer_callback: OptimizerCallback
+    ) -> PyMooOptimizer:
+        """Initialize the optimizer plugin.
+
+        See the [ropt.plugins.optimizer.protocol.OptimizerPluginProtocol][] protocol.
+
+        # noqa
+        """
+        return PyMooOptimizer(config, optimizer_callback)
+
+    def is_supported(self, method: str) -> bool:
+        """Check if a method is supported.
+
+        See the [ropt.plugins.protocol.PluginProtocol][] protocol.
+
+        # noqa
+        """
+        module_name, _, class_name = method.rpartition(".")
+        if not module_name:
+            return False
+        full_module_name = f"pymoo.algorithms.{module_name}"
+        try:
+            module = importlib.import_module(full_module_name)
+        except ImportError:
+            return False
+        for _, cls in inspect.getmembers(module, inspect.isclass):
+            if cls.__name__ == class_name:
+                return True
+        return False

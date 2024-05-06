@@ -22,8 +22,7 @@ CONFIG: Dict[str, Any] = {
         "upper_bounds": [10.0, 10.0],
     },
     "optimizer": {
-        "backend": "pymoo",
-        "algorithm": "soo.nonconvex.ga.GA",
+        "method": "soo.nonconvex.ga.GA",
         "options": options,
     },
     "nonlinear_constraints": {

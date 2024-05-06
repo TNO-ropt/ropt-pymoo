@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ropt-pymoo"
-description = "A pymoo backend for the ropt robust optimization library"
+description = "A pymoo plugin for the ropt robust optimization library"
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -20,13 +20,13 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dynamic = ["version"]
-dependencies = ["numpy", "pymoo", "pydantic", "ropt>=0.2.1"]
+dependencies = ["numpy", "pymoo", "pydantic", "ropt>=0.3.0"]
 
 [project.optional-dependencies]
 test = ["ruff", "mypy", "pytest", "ruamel.yaml"]
 
 [project.entry-points."ropt.plugins.optimizer"]
-pymoo = "ropt_pymoo.pymoo:PyMooOptimizer"
+pymoo = "ropt_pymoo.pymoo:PyMooOptimizerPlugin"
 
 [tool.setuptools.packages.find]
 where = ["src"]

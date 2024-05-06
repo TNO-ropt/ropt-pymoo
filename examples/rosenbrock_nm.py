@@ -16,8 +16,7 @@ CONFIG: Dict[str, Any] = {
         "upper_bounds": [2.0, 2.0],
     },
     "optimizer": {
-        "backend": "pymoo",
-        "algorithm": "soo.nonconvex.nelder.NelderMead",
+        "method": "soo.nonconvex.nelder.NelderMead",
         "options": {
             "termination": ("n_iter", 30),
         },

@@ -10,8 +10,6 @@ from pymoo.core.operator import Operator  # noqa: TCH002
 from pymoo.core.termination import Termination  # noqa: TCH002
 from pymoo.termination import get_termination
 
-# pylint: disable=no-self-argument,no-self-use
-
 
 class _ParametersBaseModel(BaseModel):
     model_config = ConfigDict(
