@@ -26,11 +26,7 @@ import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.enums import ConstraintType
-from ropt.plugins.optimizer.protocol import (
-    OptimizerCallback,
-    OptimizerPluginProtocol,
-    OptimizerProtocol,
-)
+from ropt.plugins.optimizer.base import Optimizer, OptimizerCallback, OptimizerPlugin
 from ropt.plugins.optimizer.utils import create_output_path, filter_linear_constraints
 
 from ._config import ParametersConfig
@@ -38,7 +34,6 @@ from ._config import ParametersConfig
 if TYPE_CHECKING:
     from numpy.typing import NDArray
     from ropt.config.enopt import EnOptConfig
-    from ropt.plugins.optimizer.protocol import OptimizerCallback
 
 _OUTPUT_FILE = "optimizer_output"
 
@@ -120,7 +115,7 @@ class _Problem(Problem):  # type: ignore
         )
 
 
-class PyMooOptimizer(OptimizerProtocol):
+class PyMooOptimizer(Optimizer):
     """Plugin class for optimization via pymoo."""
 
     def __init__(
@@ -128,7 +123,7 @@ class PyMooOptimizer(OptimizerProtocol):
     ) -> None:
         """Initialize the optimizer implemented by the pymoo plugin.
 
-        See the [ropt.plugins.optimizer.protocol.OptimizerProtocol][] protocol.
+        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
 
         # noqa
         """
@@ -156,7 +151,7 @@ class PyMooOptimizer(OptimizerProtocol):
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
 
-        See the [ropt.plugins.optimizer.protocol.Optimizer][] protocol.
+        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
 
         # noqa
         """
@@ -203,7 +198,7 @@ class PyMooOptimizer(OptimizerProtocol):
     def allow_nan(self) -> bool:
         """Whether NaN is allowed.
 
-        See the [ropt.plugins.optimizer.protocol.Optimizer][] protocol.
+        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
 
         # noqa
         """
@@ -318,7 +313,7 @@ class PyMooOptimizer(OptimizerProtocol):
         return self._cached_function
 
 
-class PyMooOptimizerPlugin(OptimizerPluginProtocol):
+class PyMooOptimizerPlugin(OptimizerPlugin):
     """Default filter transform plugin class."""
 
     def create(
@@ -326,7 +321,7 @@ class PyMooOptimizerPlugin(OptimizerPluginProtocol):
     ) -> PyMooOptimizer:
         """Initialize the optimizer plugin.
 
-        See the [ropt.plugins.optimizer.protocol.OptimizerPluginProtocol][] protocol.
+        See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
 
         # noqa
         """
@@ -335,7 +330,7 @@ class PyMooOptimizerPlugin(OptimizerPluginProtocol):
     def is_supported(self, method: str) -> bool:
         """Check if a method is supported.
 
-        See the [ropt.plugins.protocol.PluginProtocol][] protocol.
+        See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
 
         # noqa
         """
