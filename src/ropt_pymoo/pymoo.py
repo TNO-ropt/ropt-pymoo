@@ -16,6 +16,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Final,
     Optional,
     TextIO,
     Tuple,
@@ -35,10 +36,10 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
     from ropt.config.enopt import EnOptConfig
 
-_OUTPUT_FILE = "optimizer_output"
+_OUTPUT_FILE: Final = "optimizer_output"
 
 # These algorithms do not allow NaN fucntion values:
-_NO_FAILURE_HANDLING = {"NelderMead"}
+_NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 
 @dataclass
