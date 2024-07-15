@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from ropt.enums import ConstraintType
 from ropt.evaluator import EvaluatorContext, EvaluatorResult
 from ropt.results import FunctionResults, Results
-from ropt.workflow import BasicWorkflow
+from ropt.workflow import BasicOptimizationWorkflow
 from ruamel import yaml
 
 # For convenience we use a YAML file to store the optimizer options:
@@ -47,7 +47,9 @@ def report(results: Tuple[Results, ...]) -> None:
 
 
 def run_optimization(config: Dict[str, Any]) -> None:
-    optimal_result = BasicWorkflow(config, function, callback=report).run().results
+    optimal_result = (
+        BasicOptimizationWorkflow(config, function).add_callback(report).run().results
+    )
     assert optimal_result is not None
     assert optimal_result.functions is not None
     print(f"BEST RESULT: {optimal_result.result_id}")
