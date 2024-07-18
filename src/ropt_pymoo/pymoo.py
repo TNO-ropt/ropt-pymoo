@@ -44,17 +44,17 @@ _NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 @dataclass
 class _Constraints:
-    linear_eq: NDArray[np.uintc] = field(
-        default_factory=lambda: np.array([], dtype=np.uintc)
+    linear_eq: NDArray[np.bool_] = field(
+        default_factory=lambda: np.array([], dtype=np.bool_)
     )
-    linear_ineq: NDArray[np.uintc] = field(
-        default_factory=lambda: np.array([], dtype=np.uintc)
+    linear_ineq: NDArray[np.bool_] = field(
+        default_factory=lambda: np.array([], dtype=np.bool_)
     )
-    nonlinear_eq: NDArray[np.uintc] = field(
-        default_factory=lambda: np.array([], dtype=np.uintc)
+    nonlinear_eq: NDArray[np.bool_] = field(
+        default_factory=lambda: np.array([], dtype=np.bool_)
     )
-    nonlinear_ineq: NDArray[np.uintc] = field(
-        default_factory=lambda: np.array([], dtype=np.uintc)
+    nonlinear_ineq: NDArray[np.bool_] = field(
+        default_factory=lambda: np.array([], dtype=np.bool_)
     )
     coefficients: NDArray[np.float64] = field(
         default_factory=lambda: np.array([]),
