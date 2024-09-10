@@ -64,7 +64,7 @@ class _Constraints:
     eq_func: Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]] = None
 
 
-class _Problem(Problem):  # type: ignore
+class _Problem(Problem):  # type: ignore[misc]
     def __init__(  # noqa: PLR0913
         self,
         n_var: int,

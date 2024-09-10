@@ -1,4 +1,6 @@
-from pathlib import Path  # noqa: INP001
+"""Discrete optimization example."""
+
+from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
@@ -32,6 +34,15 @@ CONFIG: Dict[str, Any] = {
 
 
 def function(variables: NDArray[np.float64], _: EvaluatorContext) -> EvaluatorResult:
+    """Evaluate the function.
+
+    Args:
+        variables: The variables to evaluate
+        context:   Evaluator context
+
+    Returns:
+        Calculated objectives and constraints.
+    """
     x, y = variables[0, :]
     objectives = np.array(-min(3 * x, y), ndmin=2, dtype=np.float64)
     constraints = np.array(x + y - 10, ndmin=2, dtype=np.float64)
@@ -39,6 +50,11 @@ def function(variables: NDArray[np.float64], _: EvaluatorContext) -> EvaluatorRe
 
 
 def report(event: Event) -> None:
+    """Report results of an evaluation.
+
+    Args:
+        event: event data
+    """
     assert event.results is not None
     for item in event.results:
         if isinstance(item, FunctionResults):
@@ -49,6 +65,7 @@ def report(event: Event) -> None:
 
 
 def run_optimization(config: Dict[str, Any]) -> None:
+    """Run the optimization."""
     optimal_result = (
         OptimizationPlanRunner(config, function)
         .add_observer(EventType.FINISHED_EVALUATION, report)
@@ -63,6 +80,7 @@ def run_optimization(config: Dict[str, Any]) -> None:
 
 
 def main() -> None:
+    """Main function."""
     run_optimization(CONFIG)
 
 
