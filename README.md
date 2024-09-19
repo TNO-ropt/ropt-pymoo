@@ -123,18 +123,11 @@ seed: 1234  # The seed that is passed to the minimize function:
 
 ## Development
 The `ropt-pymoo` source distribution can be found on
-[GitHub](https://github.com/tno-ropt/ropt-pymoo). To install from source, enter
-the `ropt-pymoo` distribution directory and execute:
+[GitHub](https://github.com/tno-ropt/ropt-pymoo). It uses a standard
+`pyproject.toml` file, which contains build information and configuration
+settings for various tools. A development environment can be set up with
+compatible tools of your choice.
 
-```bash
-pip install .
-```
-
-
-## Running the tests
-To run the test suite, install the necessary dependencies and execute `pytest`:
-
-```bash
-pip install .[test]
-pytest
-```
+The `ropt-pymoo` package uses [ruff](https://docs.astral.sh/ruff/) (for
+formatting and linting), [mypy](https://www.mypy-lang.org/) (for static typing),
+and [pytest](https://docs.pytest.org/en/stable/) (for running the test suite).
