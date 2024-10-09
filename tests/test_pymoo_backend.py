@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 from ropt.enums import ConstraintType, OptimizerExitCode
-from ropt.optimization import Event
-from ropt.plan import OptimizationPlanRunner
+from ropt.plan import Event, OptimizationPlanRunner
 
 
 @pytest.fixture(name="enopt_config")

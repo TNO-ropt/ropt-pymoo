@@ -7,8 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 from ropt.enums import ConstraintType, EventType
 from ropt.evaluator import EvaluatorContext, EvaluatorResult
-from ropt.optimization import Event
-from ropt.plan import OptimizationPlanRunner
+from ropt.plan import Event, OptimizationPlanRunner
 from ropt.results import FunctionResults
 from ruamel import yaml
 
