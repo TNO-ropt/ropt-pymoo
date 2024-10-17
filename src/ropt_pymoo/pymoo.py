@@ -205,6 +205,16 @@ class PyMooOptimizer(Optimizer):
         """
         return self._allow_nan
 
+    @property
+    def is_parallel(self) -> bool:
+        """Whether the current run is parallel.
+
+        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
+
+        # noqa
+        """
+        return self._config.optimizer.parallel
+
     def _get_bounds(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._config.variables.lower_bounds
         upper_bounds = self._config.variables.upper_bounds
