@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 from ropt.enums import ConstraintType, OptimizerExitCode
-from ropt.plan import Event, OptimizationPlanRunner
+from ropt.plan import BasicOptimizer, Event
 
 
 @pytest.fixture(name="enopt_config")
@@ -29,7 +29,7 @@ def test_pymoo_bound_constraints(
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     enopt_config["optimizer"]["parallel"] = parallel
-    variables = OptimizationPlanRunner(enopt_config, evaluator()).run().variables
+    variables = BasicOptimizer(enopt_config, evaluator()).run().variables
     assert variables is not None
     assert np.allclose(variables, [0.15, 0.0, 0.2], atol=0.02)
 
@@ -45,12 +45,12 @@ def test_pymoo_termination(
     enopt_config["optimizer"]["options"] = {
         "termination": {"name": "default.DefaultSingleObjectiveTermination"}
     }
-    variables1 = OptimizationPlanRunner(enopt_config, evaluator()).run().variables
+    variables1 = BasicOptimizer(enopt_config, evaluator()).run().variables
     assert variables1 is not None
     assert np.allclose(variables1, [0.15, 0.0, 0.2], atol=0.02)
 
     enopt_config["optimizer"]["options"] = {"termination": {"name": "soo"}}
-    variables2 = OptimizationPlanRunner(enopt_config, evaluator()).run().variables
+    variables2 = BasicOptimizer(enopt_config, evaluator()).run().variables
     assert variables2 is not None
     assert np.allclose(variables2, [0.15, 0.0, 0.2], atol=0.02)
     assert np.allclose(variables1, variables2, atol=0.0, rtol=1e-10)
@@ -80,9 +80,7 @@ def test_pymoo_ineq_nonlinear_constraints(
             NDArray[np.float64], weight * variables[0] + weight * variables[2]
         ),
     )
-    variables = (
-        OptimizationPlanRunner(enopt_config, evaluator(test_functions)).run().variables
-    )
+    variables = BasicOptimizer(enopt_config, evaluator(test_functions)).run().variables
     assert variables is not None
     assert np.allclose(variables, [-0.05, 0.0, 0.45], atol=0.02)
 
@@ -107,7 +105,7 @@ def test_pymoo_eq_nonlinear_constraints(
         lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
     )
     variables = (
-        OptimizationPlanRunner(
+        BasicOptimizer(
             enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
         )
         .run()
@@ -131,7 +129,7 @@ def test_pymoo_le_ge_linear_constraints(
     }
 
     variables = (
-        OptimizationPlanRunner(enopt_config, evaluator(), constraint_tolerance=1e-4)
+        BasicOptimizer(enopt_config, evaluator(), constraint_tolerance=1e-4)
         .run()
         .variables
     )
@@ -153,7 +151,7 @@ def test_pymoo_eq_linear_constraints(
     }
 
     variables = (
-        OptimizationPlanRunner(enopt_config, evaluator(), constraint_tolerance=1e-4)
+        BasicOptimizer(enopt_config, evaluator(), constraint_tolerance=1e-4)
         .run()
         .variables
     )
@@ -186,7 +184,7 @@ def test_pymoo_eq_mixed_constraints(
         lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
     )
     variables = (
-        OptimizationPlanRunner(
+        BasicOptimizer(
             enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
         )
         .run()
@@ -224,7 +222,7 @@ def test_pymoo_constraint_handling(
     )
 
     variables = (
-        OptimizationPlanRunner(
+        BasicOptimizer(
             enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
         )
         .run()
@@ -243,9 +241,7 @@ def test_pymoo_bound_constraints_with_failure(
     enopt_config["optimizer"]["parallel"] = True
     enopt_config["optimizer"]["max_functions"] = 800
     enopt_config["realizations"] = {"realization_min_success": 0}
-    variables1 = (
-        OptimizationPlanRunner(enopt_config, evaluator(test_functions)).run().variables
-    )
+    variables1 = BasicOptimizer(enopt_config, evaluator(test_functions)).run().variables
     assert variables1 is not None
     assert np.allclose(variables1, [0.15, 0.0, 0.2], atol=0.02)
 
@@ -260,7 +256,7 @@ def test_pymoo_bound_constraints_with_failure(
         return test_functions[0](x)
 
     variables2 = (
-        OptimizationPlanRunner(enopt_config, evaluator((_add_nan, test_functions[1])))
+        BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
         .run()
         .variables
     )
@@ -278,9 +274,7 @@ def test_pymoo_bound_constraints_no_failure_handling(
     enopt_config["optimizer"]["parallel"] = True
     enopt_config["optimizer"]["max_functions"] = 800
 
-    variables1 = (
-        OptimizationPlanRunner(enopt_config, evaluator(test_functions)).run().variables
-    )
+    variables1 = BasicOptimizer(enopt_config, evaluator(test_functions)).run().variables
     assert variables1 is not None
     assert np.allclose(variables1, [0.15, 0.0, 0.2], atol=0.02)
 
@@ -299,9 +293,7 @@ def test_pymoo_bound_constraints_no_failure_handling(
     def handle_finished(event: Event) -> None:
         assert event.exit_code == OptimizerExitCode.TOO_FEW_REALIZATIONS
 
-    plan = OptimizationPlanRunner(
-        enopt_config, evaluator((_add_nan, test_functions[1]))
-    )
+    plan = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
     plan.run()
     assert plan.exit_code == OptimizerExitCode.TOO_FEW_REALIZATIONS
     variables2 = plan.variables
