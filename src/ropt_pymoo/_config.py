@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict, Field
 from pymoo.core.algorithm import Algorithm  # noqa: TCH002
@@ -22,7 +22,7 @@ class _ParametersBaseModel(BaseModel):
     )
 
 
-ParameterValues = Union[bool, int, float, str]
+ParameterValues = bool | int | float | str
 
 
 class ObjectConfig(_ParametersBaseModel):
@@ -43,7 +43,7 @@ class ObjectConfig(_ParametersBaseModel):
     """
 
     object_: str = Field(alias="object")
-    parameters: Dict[str, Union[ParameterValues, ObjectConfig]] = {}
+    parameters: dict[str, ParameterValues | ObjectConfig] = {}
 
 
 class TerminationConfig(_ParametersBaseModel):
@@ -74,7 +74,7 @@ class TerminationConfig(_ParametersBaseModel):
     """
 
     name: str = "soo"
-    parameters: Dict[str, Union[int, float]] = {}
+    parameters: dict[str, int | float] = {}
 
 
 class ConstraintsConfig(_ParametersBaseModel):
@@ -95,7 +95,7 @@ class ConstraintsConfig(_ParametersBaseModel):
     """
 
     name: str
-    parameters: Dict[str, Union[bool, int, float, str]] = {}
+    parameters: dict[str, bool | int | float | str] = {}
 
 
 class ParametersConfig(_ParametersBaseModel):
@@ -120,10 +120,10 @@ class ParametersConfig(_ParametersBaseModel):
         seed:        The seed value for the random number generator
     """
 
-    algorithm: Union[str, Algorithm]
-    parameters: Dict[str, Union[ParameterValues, ObjectConfig]] = {}
-    constraints: Optional[ConstraintsConfig] = None
-    termination: Union[TerminationConfig, Tuple[Any, ...]] = TerminationConfig()
+    algorithm: str | Algorithm
+    parameters: dict[str, ParameterValues | ObjectConfig] = {}
+    constraints: ConstraintsConfig | None = None
+    termination: TerminationConfig | tuple[Any, ...] = TerminationConfig()
     seed: int = 1
 
     def get_algorithm(self) -> Algorithm:
@@ -146,7 +146,7 @@ class ParametersConfig(_ParametersBaseModel):
             raise ValueError(msg)
         return algorithm(**parameters)
 
-    def get_termination(self) -> Union[Termination, Tuple[Any, ...]]:
+    def get_termination(self) -> Termination | tuple[Any, ...]:
         """Parse the termination config.
 
         Raises:
@@ -196,7 +196,7 @@ class ParametersConfig(_ParametersBaseModel):
         return constraints_class
 
 
-def _get_class(name: str, prefix: str, keyword: str) -> Optional[Callable[..., Any]]:
+def _get_class(name: str, prefix: str, keyword: str) -> Callable[..., Any] | None:
     module_name, _, class_name = name.rpartition(".")
     if not module_name:
         msg = f"Not a properly formatted {keyword} name: {name}"
@@ -218,8 +218,8 @@ def _get_class(name: str, prefix: str, keyword: str) -> Optional[Callable[..., A
 
 
 def _parse_parameters(
-    parameters: Dict[str, Union[ParameterValues, ObjectConfig]],
-) -> Dict[str, Union[ParameterValues, Operator]]:
+    parameters: dict[str, ParameterValues | ObjectConfig],
+) -> dict[str, ParameterValues | Operator]:
     parsed = {}
     for key, value in parameters.items():
         if isinstance(value, ObjectConfig):

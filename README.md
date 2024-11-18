@@ -9,7 +9,7 @@ Public License v3.0 (a copy is provided in the LICENSE file).
 
 
 ## Dependencies
-This code has been tested with Python versions 3.8-3.12.
+This code has been tested with Python version 3.11.
 
 The plugin requires the [pymoo](https://pymoo.org/) optimizer.
 

@@ -1,7 +1,7 @@
 """Discrete optimization example."""
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -14,7 +14,7 @@ from ruamel import yaml
 # For convenience we use a YAML file to store the optimizer options:
 options = yaml.YAML(typ="safe", pure=True).load(Path("discrete_ga.yml"))
 
-CONFIG: Dict[str, Any] = {
+CONFIG: dict[str, Any] = {
     "variables": {
         # Ignored, but needed to establish the number of variables:
         "initial_values": 2 * [0.0],
@@ -63,7 +63,7 @@ def report(event: Event) -> None:
             print(f"  objective: {item.functions.weighted_objective}\n")
 
 
-def run_optimization(config: Dict[str, Any]) -> None:
+def run_optimization(config: dict[str, Any]) -> None:
     """Run the optimization."""
     optimal_result = (
         BasicOptimizer(config, function)

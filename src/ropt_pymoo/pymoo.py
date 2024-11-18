@@ -15,12 +15,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Final,
-    Optional,
     TextIO,
-    Tuple,
-    Union,
 )
 
 import numpy as np
@@ -42,7 +38,7 @@ _OUTPUT_FILE: Final = "optimizer_output"
 _NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 
-@dataclass
+@dataclass(slots=True)
 class _Constraints:
     linear_eq: NDArray[np.bool_] = field(
         default_factory=lambda: np.array([], dtype=np.bool_)
@@ -60,8 +56,8 @@ class _Constraints:
         default_factory=lambda: np.array([]),
     )
     rhs_values: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
-    ineq_func: Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]] = None
-    eq_func: Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]] = None
+    ineq_func: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None
+    eq_func: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None
 
 
 class _Problem(Problem):  # type: ignore[misc]
@@ -94,7 +90,7 @@ class _Problem(Problem):  # type: ignore[misc]
     def _evaluate(
         self,
         variables: NDArray[np.float64],
-        out: Dict[str, Any],
+        out: dict[str, Any],
         *_0: Any,  # noqa: ANN401
         **_1: Any,  # noqa: ANN401
     ) -> None:
@@ -140,8 +136,8 @@ class PyMooOptimizer(Optimizer):
         self._parameters = ParametersConfig.model_validate(options)
         self._bounds = self._get_bounds()
         self._constraints = self._get_constraints()
-        self._cached_variables: Optional[NDArray[np.float64]] = None
-        self._cached_function: Optional[NDArray[np.float64]] = None
+        self._cached_variables: NDArray[np.float64] | None = None
+        self._cached_function: NDArray[np.float64] | None = None
         self._stdout: TextIO
 
         self._allow_nan = True
@@ -176,7 +172,7 @@ class PyMooOptimizer(Optimizer):
             problem = constraints(problem, **self._parameters.constraints.parameters)
 
         output_dir = self._config.optimizer.output_dir
-        output_file: Union[str, Path]
+        output_file: str | Path
         if output_dir is None:
             output_file = os.devnull
         else:
@@ -184,8 +180,9 @@ class PyMooOptimizer(Optimizer):
 
         self._stdout = sys.stdout
 
-        with Path(output_file).open("a", encoding="utf-8") as output, redirect_stdout(
-            output
+        with (
+            Path(output_file).open("a", encoding="utf-8") as output,
+            redirect_stdout(output),
         ):
             minimize(
                 problem,
@@ -215,7 +212,7 @@ class PyMooOptimizer(Optimizer):
         """
         return self._config.optimizer.parallel
 
-    def _get_bounds(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._config.variables.lower_bounds
         upper_bounds = self._config.variables.upper_bounds
         variable_indices = self._config.variables.indices
