@@ -5,9 +5,9 @@ import inspect
 from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict, Field
-from pymoo.core.algorithm import Algorithm  # noqa: TCH002
-from pymoo.core.operator import Operator  # noqa: TCH002
-from pymoo.core.termination import Termination  # noqa: TCH002
+from pymoo.core.algorithm import Algorithm  # noqa: TC002
+from pymoo.core.operator import Operator  # noqa: TC002
+from pymoo.core.termination import Termination  # noqa: TC002
 from pymoo.termination import get_termination
 
 
