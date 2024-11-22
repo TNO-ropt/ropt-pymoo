@@ -1,5 +1,4 @@
 import importlib
-import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -20,17 +19,17 @@ def _load_from_file(name: str, sub_path: str | None = None) -> Any:
     return module
 
 
-def test_rosenbrock_de(tmp_path: Path) -> None:
-    os.chdir(tmp_path)
+def test_rosenbrock_de(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
     module = _load_from_file("rosenbrock_nm")
     module.main()
 
 
-def test_discrete_ga(tmp_path: Path) -> None:
+def test_discrete_ga(tmp_path: Path, monkeypatch: Any) -> None:
     shutil.copyfile(
         EXAMPLES_DIR / "discrete_ga.yml",
         tmp_path / "discrete_ga.yml",
     )
-    os.chdir(tmp_path)
+    monkeypatch.chdir(tmp_path)
     module = _load_from_file("discrete_ga")
     module.main()
