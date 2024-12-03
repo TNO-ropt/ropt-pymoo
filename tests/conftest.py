@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 import numpy as np
 import pytest
@@ -65,7 +65,7 @@ def fixture_test_functions() -> tuple[_Function, _Function]:
 
 
 @pytest.fixture(scope="session")
-def evaluator(test_functions: Any) -> Callable[[List[_Function]], Evaluator]:
+def evaluator(test_functions: Any) -> Callable[[list[_Function]], Evaluator]:
     def _evaluator(test_functions: list[_Function] = test_functions) -> Evaluator:
         return partial(_function_runner, functions=test_functions)
 
