@@ -291,7 +291,7 @@ def test_pymoo_bound_constraints_no_failure_handling(
         return test_functions[0](x)
 
     def handle_finished(event: Event) -> None:
-        assert event.exit_code == OptimizerExitCode.TOO_FEW_REALIZATIONS
+        assert event.data["exit_code"] == OptimizerExitCode.TOO_FEW_REALIZATIONS
 
     plan = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
     plan.run()
