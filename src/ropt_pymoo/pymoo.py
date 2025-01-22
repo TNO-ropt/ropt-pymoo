@@ -322,7 +322,7 @@ class PyMooOptimizer(Optimizer):
 
 
 class PyMooOptimizerPlugin(OptimizerPlugin):
-    """Default filter transform plugin class."""
+    """Pymoo optimizer plugin class."""
 
     def create(
         self, config: EnOptConfig, optimizer_callback: OptimizerCallback
