@@ -3,7 +3,7 @@ from typing import Any, cast
 import numpy as np
 import pytest
 from numpy.typing import NDArray
-from ropt.enums import ConstraintType, OptimizerExitCode
+from ropt.enums import OptimizerExitCode
 from ropt.plan import BasicOptimizer, Event
 
 
@@ -57,10 +57,13 @@ def test_pymoo_termination(
 
 
 @pytest.mark.parametrize("parallel", [False, True])
-@pytest.mark.parametrize("bound_type", [ConstraintType.LE, ConstraintType.GE])
+@pytest.mark.parametrize(
+    ("lower_bounds", "upper_bounds"), [(-np.inf, 0.4), (-0.4, np.inf)]
+)
 def test_pymoo_ineq_nonlinear_constraints(
     enopt_config: dict[str, Any],
-    bound_type: ConstraintType,
+    lower_bounds: Any,
+    upper_bounds: Any,
     evaluator: Any,
     parallel: bool,
     test_functions: Any,
@@ -69,11 +72,11 @@ def test_pymoo_ineq_nonlinear_constraints(
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
-        "rhs_values": 0.4 if bound_type == ConstraintType.LE else -0.4,
-        "types": [bound_type],
+        "lower_bounds": lower_bounds,
+        "upper_bounds": upper_bounds,
     }
 
-    weight = 1.0 if bound_type == ConstraintType.LE else -1.0
+    weight = 1.0 if upper_bounds == 0.4 else -1.0
     test_functions = (
         *test_functions,
         lambda variables: cast(
@@ -96,8 +99,8 @@ def test_pymoo_eq_nonlinear_constraints(
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
-        "rhs_values": 1.0,
-        "types": [ConstraintType.EQ],
+        "lower_bounds": 1.0,
+        "upper_bounds": 1.0,
     }
 
     test_functions = (
@@ -116,6 +119,30 @@ def test_pymoo_eq_nonlinear_constraints(
 
 
 @pytest.mark.parametrize("parallel", [False, True])
+def test_pymoo_ineq_nonlinear_constraints_two_sided(
+    enopt_config: Any,
+    parallel: bool,
+    evaluator: Any,
+    test_functions: Any,
+) -> None:
+    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
+    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
+    enopt_config["nonlinear_constraints"] = {
+        "lower_bounds": [0.0],
+        "upper_bounds": [0.3],
+    }
+    test_functions = (
+        *test_functions,
+        lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
+    )
+
+    variables = BasicOptimizer(enopt_config, evaluator(test_functions)).run().variables
+    assert variables is not None
+    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
+
+
+@pytest.mark.parametrize("parallel", [False, True])
 def test_pymoo_le_ge_linear_constraints(
     enopt_config: dict[str, Any], evaluator: Any, parallel: bool
 ) -> None:
@@ -123,9 +150,9 @@ def test_pymoo_le_ge_linear_constraints(
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["linear_constraints"] = {
-        "coefficients": [[1, 0, 1], [-1, 0, -1]],
-        "rhs_values": [0.4, -0.4],
-        "types": [ConstraintType.LE, ConstraintType.GE],
+        "coefficients": [[1, 0, 1]],
+        "lower_bounds": [-np.inf],
+        "upper_bounds": [0.4],
     }
 
     variables = (
@@ -146,8 +173,8 @@ def test_pymoo_eq_linear_constraints(
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1], [0, 1, 1]],
-        "rhs_values": [1.0, 0.75],
-        "types": [ConstraintType.EQ, ConstraintType.EQ],
+        "lower_bounds": [1.0, 0.75],
+        "upper_bounds": [1.0, 0.75],
     }
 
     variables = (
@@ -157,6 +184,44 @@ def test_pymoo_eq_linear_constraints(
     )
     assert variables is not None
     assert np.allclose(variables, [0.25, 0.0, 0.75], atol=0.02)
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nomad_le_ge_linear_constraints_two_sided(
+    enopt_config: Any, evaluator: Any, parallel: bool
+) -> None:
+    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
+    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
+    enopt_config["linear_constraints"] = {
+        "coefficients": [[1, 0, 1], [1, 0, 1]],
+        "lower_bounds": [-np.inf, 0.0],
+        "upper_bounds": [0.3, np.inf],
+    }
+
+    variables = BasicOptimizer(enopt_config, evaluator()).run().variables
+    assert variables is not None
+    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
+
+    enopt_config["linear_constraints"] = {
+        "coefficients": [[1, 0, 1]],
+        "lower_bounds": [0.0],
+        "upper_bounds": [0.3],
+    }
+
+    variables = BasicOptimizer(enopt_config, evaluator()).run().variables
+    assert variables is not None
+    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
+
+    enopt_config["linear_constraints"] = {
+        "coefficients": [[1, 0, 1]],
+        "lower_bounds": [0.3],
+        "upper_bounds": [0.0],
+    }
+
+    variables = BasicOptimizer(enopt_config, evaluator()).run().variables
+    assert variables is not None
+    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -170,13 +235,13 @@ def test_pymoo_eq_mixed_constraints(
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
-        "rhs_values": 1.0,
-        "types": [ConstraintType.EQ],
+        "lower_bounds": [1.0],
+        "upper_bounds": [1.0],
     }
     enopt_config["linear_constraints"] = {
         "coefficients": [[0, 0, 1]],
-        "rhs_values": [0.75],
-        "types": [ConstraintType.EQ],
+        "lower_bounds": [0.75],
+        "upper_bounds": [0.75],
     }
 
     test_functions = (
@@ -205,8 +270,8 @@ def test_pymoo_constraint_handling(
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
-        "rhs_values": 0.4,
-        "types": [ConstraintType.LE],
+        "upper_bounds": -np.inf,
+        "lower_bounds": 0.4,
     }
     enopt_config["optimizer"]["options"] = {
         "termination": {"name": "default.DefaultSingleObjectiveTermination"},

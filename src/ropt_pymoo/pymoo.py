@@ -8,23 +8,14 @@ import inspect
 import os
 import sys
 from contextlib import redirect_stdout
-from dataclasses import dataclass, field
-from functools import partial
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Final,
-    TextIO,
-)
+from typing import TYPE_CHECKING, Any, Callable, Final, TextIO
 
 import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from ropt.enums import ConstraintType
 from ropt.plugins.optimizer.base import Optimizer, OptimizerCallback, OptimizerPlugin
-from ropt.plugins.optimizer.utils import create_output_path, filter_linear_constraints
+from ropt.plugins.optimizer.utils import NormalizedConstraints, create_output_path
 
 from ._config import ParametersConfig
 
@@ -38,28 +29,6 @@ _OUTPUT_FILE: Final = "optimizer_output"
 _NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 
-@dataclass(slots=True)
-class _Constraints:
-    linear_eq: NDArray[np.bool_] = field(
-        default_factory=lambda: np.array([], dtype=np.bool_)
-    )
-    linear_ineq: NDArray[np.bool_] = field(
-        default_factory=lambda: np.array([], dtype=np.bool_)
-    )
-    nonlinear_eq: NDArray[np.bool_] = field(
-        default_factory=lambda: np.array([], dtype=np.bool_)
-    )
-    nonlinear_ineq: NDArray[np.bool_] = field(
-        default_factory=lambda: np.array([], dtype=np.bool_)
-    )
-    coefficients: NDArray[np.float64] = field(
-        default_factory=lambda: np.array([]),
-    )
-    rhs_values: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
-    ineq_func: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None
-    eq_func: Callable[[NDArray[np.float64]], NDArray[np.float64]] | None = None
-
-
 class _Problem(Problem):  # type: ignore[misc]
     def __init__(  # noqa: PLR0913
         self,
@@ -67,14 +36,27 @@ class _Problem(Problem):  # type: ignore[misc]
         lower: NDArray[np.float64],
         upper: NDArray[np.float64],
         function: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-        constraints: _Constraints,
+        constraints: Callable[[NDArray[np.float64]], NDArray[np.float64]],
+        is_eq: list[bool] | None,
         *,
         parallel: bool = True,
     ) -> None:
-        n_ieq_constr = np.count_nonzero(constraints.linear_ineq)
-        n_ieq_constr += np.count_nonzero(constraints.nonlinear_ineq)
-        n_eq_constr = np.count_nonzero(constraints.linear_eq)
-        n_eq_constr += np.count_nonzero(constraints.nonlinear_eq)
+        self._is_eq: list[bool] | None = None
+        self._is_ieq: list[bool] | None = None
+        n_eq_constr = 0
+        n_ieq_constr = 0
+
+        if is_eq is not None:
+            self._is_eq = is_eq
+            self._is_ieq = [not item for item in self._is_eq]
+            n_eq_constr = sum(self._is_eq)
+            n_ieq_constr = sum(self._is_ieq)
+
+        if n_eq_constr == 0:
+            self._is_eq = None
+        if n_ieq_constr == 0:
+            self._is_ieq = None
+
         super().__init__(
             n_var=n_var,
             n_obj=1,
@@ -86,6 +68,8 @@ class _Problem(Problem):  # type: ignore[misc]
         )
         self._function = function
         self._constraints = constraints
+        self._is_eq = is_eq
+        self._parallel = parallel
 
     def _evaluate(
         self,
@@ -96,10 +80,12 @@ class _Problem(Problem):  # type: ignore[misc]
     ) -> None:
         variables = variables.astype(np.float64)
         out["F"] = self._function(variables)
-        if self._constraints.ineq_func is not None:
-            out["G"] = self._constraints.ineq_func(variables)
-        if self._constraints.eq_func is not None:
-            out["H"] = self._constraints.eq_func(variables)
+        if self._is_eq is not None or self._is_ieq is not None:
+            constraints = self._constraints(variables)
+        if self._is_eq is not None:
+            out["H"] = constraints[:, self._is_eq]
+        if self._is_ieq is not None:
+            out["G"] = constraints[:, self._is_ieq]
 
     def __deepcopy__(self, memo: Any) -> _Problem:  # noqa: ANN401
         # Deep copy does not work on the plain object due to the callbacks.
@@ -109,6 +95,8 @@ class _Problem(Problem):  # type: ignore[misc]
             upper=copy.deepcopy(self.xu),
             function=self._function,
             constraints=self._constraints,
+            is_eq=copy.deepcopy(self._is_eq),
+            parallel=copy.deepcopy(self._parallel),
         )
 
 
@@ -133,9 +121,9 @@ class PyMooOptimizer(Optimizer):
         )
         _, _, method = self._config.optimizer.method.rpartition("/")
         options["algorithm"] = method
+        self._normalized_constraints = self._init_constraints()
         self._parameters = ParametersConfig.model_validate(options)
         self._bounds = self._get_bounds()
-        self._constraints = self._get_constraints()
         self._cached_variables: NDArray[np.float64] | None = None
         self._cached_function: NDArray[np.float64] | None = None
         self._stdout: TextIO
@@ -155,16 +143,20 @@ class PyMooOptimizer(Optimizer):
         self._cached_variables = None
         self._cached_function = None
 
-        variable_indices = self._config.variables.indices
-        if variable_indices is not None:
-            initial_values = initial_values[variable_indices]
+        if self._config.variables.mask is not None:
+            initial_values = initial_values[self._config.variables.mask]
 
         problem = _Problem(
             n_var=initial_values.size,
             lower=self._bounds[0],
             upper=self._bounds[1],
-            constraints=self._constraints,
             function=self._calculate_objective,
+            constraints=self._calculate_constraints,
+            is_eq=(
+                self._normalized_constraints.is_eq
+                if self._normalized_constraints is not None
+                else None
+            ),
             parallel=self._config.optimizer.parallel,
         )
         if self._parameters.constraints is not None:
@@ -215,47 +207,33 @@ class PyMooOptimizer(Optimizer):
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._config.variables.lower_bounds
         upper_bounds = self._config.variables.upper_bounds
-        variable_indices = self._config.variables.indices
-        if variable_indices is not None:
-            lower_bounds = lower_bounds[variable_indices]
-            upper_bounds = upper_bounds[variable_indices]
+        if self._config.variables.mask is not None:
+            lower_bounds = lower_bounds[self._config.variables.mask]
+            upper_bounds = upper_bounds[self._config.variables.mask]
         return lower_bounds, upper_bounds
 
-    def _get_constraints(self) -> _Constraints:
-        constraints = _Constraints()
-
-        nonlinear_config = self._config.nonlinear_constraints
-        if nonlinear_config is not None:
-            constraints.nonlinear_eq = nonlinear_config.types == ConstraintType.EQ
-            constraints.nonlinear_ineq = nonlinear_config.types != ConstraintType.EQ
-
-        linear_config = self._config.linear_constraints
-        if linear_config is not None:
-            if self._config.variables.indices is not None:
-                linear_config = filter_linear_constraints(
-                    linear_config, self._config.variables.indices
+    def _init_constraints(self) -> NormalizedConstraints | None:
+        lower_bounds = []
+        upper_bounds = []
+        if self._config.nonlinear_constraints is not None:
+            lower_bounds.append(self._config.nonlinear_constraints.lower_bounds)
+            upper_bounds.append(self._config.nonlinear_constraints.upper_bounds)
+        if self._config.linear_constraints is not None:
+            mask = self._config.variables.mask
+            if mask is not None:
+                offsets = np.matmul(
+                    self._config.linear_constraints.coefficients[:, ~mask],
+                    self._config.variables.initial_values[~mask],
                 )
-            constraints.linear_eq = linear_config.types == ConstraintType.EQ
-            constraints.linear_ineq = linear_config.types != ConstraintType.EQ
-            constraints.coefficients = linear_config.coefficients.copy()
-            constraints.rhs_values = linear_config.rhs_values.copy()
-            constraints.coefficients[linear_config.types == ConstraintType.GE] *= -1.0
-            constraints.rhs_values[linear_config.types == ConstraintType.GE] *= -1.0
-
-        if np.any(constraints.nonlinear_ineq) or np.any(constraints.linear_ineq):
-            constraints.ineq_func = partial(
-                self._calculate_constraints,
-                nonlinear=constraints.nonlinear_ineq,
-                linear=constraints.linear_ineq,
+            else:
+                offsets = 0
+            lower_bounds.append(self._config.linear_constraints.lower_bounds - offsets)
+            upper_bounds.append(self._config.linear_constraints.upper_bounds - offsets)
+        if lower_bounds:
+            return NormalizedConstraints(
+                np.concatenate(lower_bounds), np.concatenate(upper_bounds), flip=True
             )
-        if np.any(constraints.nonlinear_eq) or np.any(constraints.linear_eq):
-            constraints.eq_func = partial(
-                self._calculate_constraints,
-                nonlinear=constraints.nonlinear_eq,
-                linear=constraints.linear_eq,
-            )
-
-        return constraints
+        return None
 
     def _calculate_objective(
         self, variables: NDArray[np.float64]
@@ -266,38 +244,30 @@ class PyMooOptimizer(Optimizer):
         return np.array(functions[0])
 
     def _calculate_constraints(
-        self,
-        variables: NDArray[np.float64],
-        nonlinear: NDArray[np.bool_],
-        linear: NDArray[np.bool_],
+        self, variables: NDArray[np.float64]
     ) -> NDArray[np.float64]:
-        have_nonlinear = np.any(nonlinear)
-        have_linear = np.any(linear)
-        if have_nonlinear:
-            functions = self._get_functions(variables)
-            nonlinear_constraints = (
-                functions[1:][nonlinear]
-                if variables.ndim == 1
-                else functions[:, 1:][:, nonlinear]
-            )
-        if have_linear:
-            coeffs = self._constraints.coefficients[linear]
-            rhs = self._constraints.rhs_values[linear]
-            linear_constraints = (
-                np.array(np.matmul(coeffs, variables) - rhs)
-                if variables.ndim == 1
-                else np.vstack(
-                    [
-                        np.matmul(coeffs, variables[idx, :]) - rhs
-                        for idx in range(variables.shape[0])
-                    ],
+        if self._normalized_constraints is None:
+            return np.array([])
+        if self._normalized_constraints.constraints is None:
+            constraints = []
+            if self._config.nonlinear_constraints is not None:
+                functions = self._get_functions(variables)
+                constraints.append(
+                    (
+                        functions[1:] if variables.ndim == 1 else functions[:, 1:]
+                    ).transpose()
                 )
-            )
-        if have_nonlinear and have_linear:
-            return np.hstack((nonlinear_constraints, linear_constraints))
-        if have_nonlinear:
-            return nonlinear_constraints
-        return linear_constraints
+            if self._config.linear_constraints is not None:
+                coefficients = self._config.linear_constraints.coefficients
+                if self._config.variables.mask is not None:
+                    coefficients = coefficients[:, self._config.variables.mask]
+                constraints.append(np.matmul(coefficients, variables.transpose()))
+            if constraints:
+                self._normalized_constraints.set_constraints(
+                    np.concatenate(constraints, axis=0)
+                )
+        assert self._normalized_constraints.constraints is not None
+        return self._normalized_constraints.constraints.transpose()
 
     def _get_functions(self, variables: NDArray[np.float64]) -> NDArray[np.float64]:
         if (
@@ -307,6 +277,8 @@ class PyMooOptimizer(Optimizer):
         ):
             self._cached_variables = None
             self._cached_function = None
+            if self._normalized_constraints is not None:
+                self._normalized_constraints.reset()
         if self._cached_function is None:
             self._cached_variables = variables.copy()
             with redirect_stdout(self._stdout):
