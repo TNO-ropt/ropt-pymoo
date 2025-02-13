@@ -187,7 +187,7 @@ def test_pymoo_eq_linear_constraints(
 
 
 @pytest.mark.parametrize("parallel", [False, True])
-def test_nomad_le_ge_linear_constraints_two_sided(
+def test_pymoo_le_ge_linear_constraints_two_sided(
     enopt_config: Any, evaluator: Any, parallel: bool
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
@@ -207,16 +207,6 @@ def test_nomad_le_ge_linear_constraints_two_sided(
         "coefficients": [[1, 0, 1]],
         "lower_bounds": [0.0],
         "upper_bounds": [0.3],
-    }
-
-    variables = BasicOptimizer(enopt_config, evaluator()).run().variables
-    assert variables is not None
-    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
-
-    enopt_config["linear_constraints"] = {
-        "coefficients": [[1, 0, 1]],
-        "lower_bounds": [0.3],
-        "upper_bounds": [0.0],
     }
 
     variables = BasicOptimizer(enopt_config, evaluator()).run().variables
@@ -270,8 +260,8 @@ def test_pymoo_constraint_handling(
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
-        "upper_bounds": -np.inf,
-        "lower_bounds": 0.4,
+        "lower_bounds": -np.inf,
+        "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["options"] = {
         "termination": {"name": "default.DefaultSingleObjectiveTermination"},

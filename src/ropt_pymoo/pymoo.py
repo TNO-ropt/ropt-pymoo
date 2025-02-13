@@ -15,7 +15,11 @@ import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.plugins.optimizer.base import Optimizer, OptimizerCallback, OptimizerPlugin
-from ropt.plugins.optimizer.utils import NormalizedConstraints, create_output_path
+from ropt.plugins.optimizer.utils import (
+    NormalizedConstraints,
+    create_output_path,
+    get_masked_linear_constraints,
+)
 
 from ._config import ParametersConfig
 
@@ -218,17 +222,13 @@ class PyMooOptimizer(Optimizer):
         if self._config.nonlinear_constraints is not None:
             lower_bounds.append(self._config.nonlinear_constraints.lower_bounds)
             upper_bounds.append(self._config.nonlinear_constraints.upper_bounds)
+        self._lin_coef: NDArray[np.float64] | None = None
         if self._config.linear_constraints is not None:
-            mask = self._config.variables.mask
-            if mask is not None:
-                offsets = np.matmul(
-                    self._config.linear_constraints.coefficients[:, ~mask],
-                    self._config.variables.initial_values[~mask],
-                )
-            else:
-                offsets = 0
-            lower_bounds.append(self._config.linear_constraints.lower_bounds - offsets)
-            upper_bounds.append(self._config.linear_constraints.upper_bounds - offsets)
+            self._lin_coef, lin_lower, lin_upper = get_masked_linear_constraints(
+                self._config
+            )
+            lower_bounds.append(lin_lower)
+            upper_bounds.append(lin_upper)
         if lower_bounds:
             return NormalizedConstraints(
                 np.concatenate(lower_bounds), np.concatenate(upper_bounds), flip=True
@@ -257,11 +257,8 @@ class PyMooOptimizer(Optimizer):
                         functions[1:] if variables.ndim == 1 else functions[:, 1:]
                     ).transpose()
                 )
-            if self._config.linear_constraints is not None:
-                coefficients = self._config.linear_constraints.coefficients
-                if self._config.variables.mask is not None:
-                    coefficients = coefficients[:, self._config.variables.mask]
-                constraints.append(np.matmul(coefficients, variables.transpose()))
+            if self._lin_coef is not None:
+                constraints.append(np.matmul(self._lin_coef, variables.transpose()))
             if constraints:
                 self._normalized_constraints.set_constraints(
                     np.concatenate(constraints, axis=0)
