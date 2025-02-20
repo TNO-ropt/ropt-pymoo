@@ -5,10 +5,6 @@ from __future__ import annotations
 import copy
 import importlib
 import inspect
-import os
-import sys
-from contextlib import redirect_stdout
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Final, TextIO
 
 import numpy as np
@@ -17,7 +13,6 @@ from pymoo.optimize import minimize
 from ropt.plugins.optimizer.base import Optimizer, OptimizerCallback, OptimizerPlugin
 from ropt.plugins.optimizer.utils import (
     NormalizedConstraints,
-    create_output_path,
     get_masked_linear_constraints,
 )
 
@@ -27,9 +22,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
     from ropt.config.enopt import EnOptConfig
 
-_OUTPUT_FILE: Final = "optimizer_output"
-
-# These algorithms do not allow NaN fucntion values:
+# These algorithms do not allow NaN function values:
 _NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 
@@ -167,26 +160,13 @@ class PyMooOptimizer(Optimizer):
             constraints = self._parameters.get_constraints()
             problem = constraints(problem, **self._parameters.constraints.parameters)
 
-        output_dir = self._config.optimizer.output_dir
-        output_file: str | Path
-        if output_dir is None:
-            output_file = os.devnull
-        else:
-            output_file = create_output_path(_OUTPUT_FILE, output_dir, suffix=".txt")
-
-        self._stdout = sys.stdout
-
-        with (
-            Path(output_file).open("a", encoding="utf-8") as output,
-            redirect_stdout(output),
-        ):
-            minimize(
-                problem,
-                self._parameters.get_algorithm(),
-                termination=self._parameters.get_termination(),
-                seed=self._parameters.seed,
-                verbose=output_dir is not None,
-            )
+        minimize(
+            problem,
+            self._parameters.get_algorithm(),
+            termination=self._parameters.get_termination(),
+            seed=self._parameters.seed,
+            verbose=True,
+        )
 
     @property
     def allow_nan(self) -> bool:
@@ -278,14 +258,13 @@ class PyMooOptimizer(Optimizer):
                 self._normalized_constraints.reset()
         if self._cached_function is None:
             self._cached_variables = variables.copy()
-            with redirect_stdout(self._stdout):
-                function, _ = self._optimizer_callback(
-                    variables,
-                    return_functions=True,
-                    return_gradients=False,
-                )
-                if self._allow_nan:
-                    function = np.where(np.isnan(function), np.inf, function)
+            function, _ = self._optimizer_callback(
+                variables,
+                return_functions=True,
+                return_gradients=False,
+            )
+            if self._allow_nan:
+                function = np.where(np.isnan(function), np.inf, function)
             self._cached_function = function.copy()
         return self._cached_function
 
