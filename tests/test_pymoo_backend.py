@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 from ropt.enums import OptimizerExitCode
-from ropt.plan import BasicOptimizer, Event
+from ropt.plan import BasicOptimizer
 
 
 @pytest.fixture(name="enopt_config")
@@ -344,9 +344,6 @@ def test_pymoo_bound_constraints_no_failure_handling(
             counter = 0
             return np.nan
         return test_functions[0](x)
-
-    def handle_finished(event: Event) -> None:
-        assert event.data["exit_code"] == OptimizerExitCode.TOO_FEW_REALIZATIONS
 
     plan = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
     plan.run()
