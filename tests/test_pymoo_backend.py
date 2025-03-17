@@ -1,8 +1,7 @@
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 import pytest
-from numpy.typing import NDArray
 from ropt.enums import OptimizerExitCode
 from ropt.plan import BasicOptimizer
 
@@ -79,9 +78,7 @@ def test_pymoo_ineq_nonlinear_constraints(
     weight = 1.0 if upper_bounds == 0.4 else -1.0
     test_functions = (
         *test_functions,
-        lambda variables: cast(
-            NDArray[np.float64], weight * variables[0] + weight * variables[2]
-        ),
+        lambda variables: weight * variables[0] + weight * variables[2],
     )
     variables = BasicOptimizer(enopt_config, evaluator(test_functions)).run().variables
     assert variables is not None
@@ -105,7 +102,7 @@ def test_pymoo_eq_nonlinear_constraints(
 
     test_functions = (
         *test_functions,
-        lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
+        lambda variables: variables[0] + variables[2],
     )
     variables = (
         BasicOptimizer(
@@ -134,7 +131,7 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
     }
     test_functions = (
         *test_functions,
-        lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
+        lambda variables: variables[0] + variables[2],
     )
 
     variables = BasicOptimizer(enopt_config, evaluator(test_functions)).run().variables
@@ -236,7 +233,7 @@ def test_pymoo_eq_mixed_constraints(
 
     test_functions = (
         *test_functions,
-        lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
+        lambda variables: variables[0] + variables[2],
     )
     variables = (
         BasicOptimizer(
@@ -273,7 +270,7 @@ def test_pymoo_constraint_handling(
 
     test_functions = (
         *test_functions,
-        lambda variables: cast(NDArray[np.float64], variables[0] + variables[2]),
+        lambda variables: variables[0] + variables[2],
     )
 
     variables = (
