@@ -16,7 +16,7 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dynamic = ["version"]
-dependencies = ["numpy<2", "pymoo", "pydantic"]
+dependencies = ["numpy", "pymoo", "pydantic"]
 
 [project.urls]
 "Homepage" = "https://github.com/TNO-ropt/ropt-pymoo"
