@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 from pymoo.core.algorithm import Algorithm  # noqa: TC002
 from pymoo.core.operator import Operator  # noqa: TC002
 from pymoo.core.termination import Termination  # noqa: TC002
@@ -120,11 +120,21 @@ class ParametersConfig(_ParametersBaseModel):
         seed:        The seed value for the random number generator
     """
 
-    algorithm: str | Algorithm
     parameters: dict[str, ParameterValues | ObjectConfig] = {}
     constraints: ConstraintsConfig | None = None
     termination: TerminationConfig | tuple[Any, ...] = TerminationConfig()
     seed: int = 1
+    _algorithm: str
+
+    @model_validator(mode="after")
+    def _set_algorithm(self, info: ValidationInfo) -> Self:
+        assert isinstance(info.context, str)
+        self._algorithm = info.context
+        return self
+
+    @property
+    def algorithm(self) -> str:
+        return self._algorithm
 
     def get_algorithm(self) -> Algorithm:
         """Parse the algorithm config and its parameters.
@@ -137,7 +147,7 @@ class ParametersConfig(_ParametersBaseModel):
         """
         parameters = _parse_parameters(self.parameters)
         algorithm = _get_class(
-            self.algorithm,
+            self._algorithm,
             prefix="pymoo.algorithms",
             keyword="algorithm",
         )

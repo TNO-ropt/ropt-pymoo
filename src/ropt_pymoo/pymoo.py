@@ -117,9 +117,8 @@ class PyMooOptimizer(Optimizer):
             else {}
         )
         _, _, method = self._config.optimizer.method.rpartition("/")
-        options["algorithm"] = method
         self._normalized_constraints = self._init_constraints()
-        self._parameters = ParametersConfig.model_validate(options)
+        self._parameters = ParametersConfig.model_validate(options, context=method)
         self._bounds = self._get_bounds()
         self._cached_variables: NDArray[np.float64] | None = None
         self._cached_function: NDArray[np.float64] | None = None
