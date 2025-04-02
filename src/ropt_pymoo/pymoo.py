@@ -271,8 +271,9 @@ class PyMooOptimizer(Optimizer):
 class PyMooOptimizerPlugin(OptimizerPlugin):
     """Pymoo optimizer plugin class."""
 
+    @classmethod
     def create(
-        self, config: EnOptConfig, optimizer_callback: OptimizerCallback
+        cls, config: EnOptConfig, optimizer_callback: OptimizerCallback
     ) -> PyMooOptimizer:
         """Initialize the optimizer plugin.
 
@@ -282,7 +283,8 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
         """
         return PyMooOptimizer(config, optimizer_callback)
 
-    def is_supported(self, method: str) -> bool:
+    @classmethod
+    def is_supported(cls, method: str) -> bool:
         """Check if a method is supported.
 
         See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
@@ -297,7 +299,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
             module = importlib.import_module(full_module_name)
         except ImportError:
             return False
-        for _, cls in inspect.getmembers(module, inspect.isclass):
-            if cls.__name__ == class_name:
+        for _, class_ in inspect.getmembers(module, inspect.isclass):
+            if class_.__name__ == class_name:
                 return True
         return False
