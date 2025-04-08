@@ -1,3 +1,5 @@
+"""Configuration classes for pymoo algorithms."""
+
 from __future__ import annotations
 
 import importlib
@@ -23,23 +25,27 @@ class _ParametersBaseModel(BaseModel):
 
 
 ParameterValues = bool | int | float | str
+"""Types of values that can be passed as parameters to pymoo objects."""
 
 
 class ObjectConfig(_ParametersBaseModel):
-    """Configuration for an operator.
+    """Configuration for a `pymoo` object used as a parameter.
 
-    Configures a pymoo object, which can be used a a parameter. They are
-    specified by their fully qualified name within the `pymoo` module. For
-    example to specify the `FloatRandomSampling` operator, the operator should
-    be specified as 'operators.sampling.rnd.FloatRandomSampling`.
+    This class defines the configuration for `pymoo` objects (like operators,
+    sampling methods, etc.) that are passed as parameters to other `pymoo`
+    components (e.g., an algorithm).
 
-    The parameters are specified as a dict that will be passed as keyword
-    arguments to the operator. These may consist of the basic types, such as
-    booleans, integers, floats and strings, or as a nested object specification.
+    The object itself is identified by its fully qualified class name within the
+    `pymoo` package structure. For instance, the `FloatRandomSampling` operator
+    is specified as `'operators.sampling.rnd.FloatRandomSampling'`.
+
+    Parameters for the object's constructor are provided in a dictionary. Values
+    can be basic types (booleans, integers, floats, strings) or another nested
+    `ObjectConfig` instance for complex parameter types.
 
     Attributes:
-        object:     The fully qualified operator class name.
-        parameters: The parameters passed to the operator constructor.
+        object:     The fully qualified class name of the `pymoo` object.
+        parameters: A dictionary of keyword arguments.
     """
 
     object_: str = Field(alias="object")
@@ -47,30 +53,30 @@ class ObjectConfig(_ParametersBaseModel):
 
 
 class TerminationConfig(_ParametersBaseModel):
-    """Configuration of termination conditions.
+    """Configuration for `pymoo` termination classes.
 
-    Termination objects are used within `pymoo` to determine when an
-    optimization algorithm should terminate. They are specified by a string for
-    a set of defaults, which are specified here by there fully qualified name
-    within the `pymoo.termination` module. For example to specify the
-    `MaximumGenerationTermination` termination, the it should be specified here
-    as 'max_gen.MaximumGenerationTermination`.
+    This class defines how the termination object for a `pymoo` optimization
+    algorithm is specified.
 
-    In addition to the fully qualified name it is also possible to use the short
-    name of the termination object, as it is used by the `get_termination`
-    function, e.g. `n_eval`.
+    The `name` attribute identifies the termination criterion by providing the
+    full path to the termination class within the `pymoo.termination` module
+    (e.g., `max_gen.MaximumGenerationTermination`).
+
+    The `parameters` attribute holds a dictionary of keyword arguments that will
+    be passed to the constructor of the chosen termination criterion.
 
     For details about termination objects, consult the `pymoo` manual:
-    [`Operators`](https://pymoo.org/interface/termination.html)
-
+    [Termination Criterion](https://pymoo.org/interface/termination.html).
 
     Note:
         Instead of using a termination object, it is also possible to use a
-        tuple of termination conditions. See the `pymoo` manual for details.
+        tuple of termination conditions. See the
+        [`ParametersConfig`][ropt_pymoo.config.ParametersConfig] class for
+        details.
 
     Attributes:
         name:       The fully qualified termination class name.
-        parameters: The parameters passed to the termination constructor.
+        parameters: Keyword arguments for the termination criterion's constructor.
     """
 
     name: str = "soo"
@@ -78,20 +84,24 @@ class TerminationConfig(_ParametersBaseModel):
 
 
 class ConstraintsConfig(_ParametersBaseModel):
-    """Configuration of constraint handling.
+    """Configuration for `pymoo` constraint handling methods.
 
-    Constraint objects are used within `pymoo` to determine how constraints
-    should be handled. Here they are specified by a fully qualified name within
-    the `pymoo.constraints` module. For example to specify the
-    `ConstraintsAsPenalty` object, the object should be specified
-    here as 'as_penalty.ConstraintsAsPenalty`.
+    This class defines how constraint handling is configured for a `pymoo`
+    optimization.
 
-    For details about constraint handling, consult the `pymoo` manual:
-    [`Operators`](https://pymoo.org/constraints/index.html)
+    The `name` attribute specifies the constraint handling class using its fully
+    qualified name within the `pymoo.constraints` module (e.g.,
+    `as_penalty.ConstraintsAsPenalty`).
+
+    The `parameters` attribute holds a dictionary of keyword arguments passed to
+    the constructor of the chosen constraint handling class.
+
+    For more details on constraint handling, consult the `pymoo` manual:
+    [`Constraint Handling`](https://pymoo.org/constraints/index.html).
 
     Attributes:
-        name:       The fully qualified constraint class name.
-        parameters: The parameters passed to the constraint constructor.
+        name: The fully qualified name of the constraint handling class.
+        parameters: Keyword arguments for the constraint handling class constructor.
     """
 
     name: str
@@ -99,21 +109,47 @@ class ConstraintsConfig(_ParametersBaseModel):
 
 
 class ParametersConfig(_ParametersBaseModel):
-    """Configuration of the `pymoo` algorithm.
+    """Configuration of a `pymoo` algorithm.
 
-    Optimization by `pymoo` algorithms requires three objects:
+    The general structure of the configuration is as follows:
 
-    1. An algorithm object. Here they are specified by a fully qualified name
-       within the `pymoo.algorithms` module. For example to specify the `GA`
-       algorithm, it  should be specified here as 'soo.nonconvex.ga.GA`. The
-       algorithm is initialized by parameters that here are specified by the
-       `parameters` field.
-    2. A constraints handling object.
-    3. A termination object, or a tuple of termination values.
-    4. A seed value for the random number generator used by the algorithms.
+    - **Algorithm Parameters:** Arguments passed directly to the main
+        algorithm's constructor are nested under a top-level `parameters` key.
+
+    - **Object Parameters:** When a parameter's value is itself a `pymoo`
+        object, specify it using a nested dictionary, which will be parsed into
+        a [`ObjectConfig`][ropt_pymoo.config.ObjectConfig] object, containing:
+
+          - An `object` key: The fully qualified name of the `pymoo` class
+            (e.g., `"operators.sampling.rnd.IntegerRandomSampling"`).
+          - An optional `parameters` key: A dictionary of arguments to pass to
+            *that* object's constructor. This can be nested further if those
+            arguments are also objects.
+
+    - **Termination, Constraints, Seed:** These are typically defined using
+        their own top-level keys (`termination`, `constraints`, `seed`) within
+        the `options` dictionary, following the same `object`/`parameters`
+        pattern if they require configuration:
+
+          - A `termination` field is parsed into a
+            [`TerminationConfig`][ropt_pymoo.config.TerminationConfig] object if
+            it is dictionary, or passed to the
+            [`pymoo.termination.get_termination()`](https://pymoo.org/interface/termination.html)
+            function if it is a tuple of arguments.
+          - A `constraints` field is parsed into a
+            [`ConstraintsConfig`][ropt_pymoo.config.ConstraintsConfig] object.
+          - A `seed` field is parsed into an integer value.
+
+    Note:
+        `constraints`, `termination`, and `seed` are optional:
+
+           - If `constraints` is `None`, the default constraint handling of
+             `pymoo` will apply.
+           - If `termination` is `None`, the default termination criterion `soo`
+             is used.
+           - The default value of `seed` is `1`.
 
     Attributes:
-        algorithm:   The fully qualified name of the algorithm class
         parameters:  The parameters passed to the algorithm constructor
         constraints: Specification of the constraint handling object to use
         termination: Specification of the termination object to use
@@ -134,6 +170,11 @@ class ParametersConfig(_ParametersBaseModel):
 
     @property
     def algorithm(self) -> str:
+        """Get the algorithm name.
+
+        Returns:
+            The fully qualified algorithm class name.
+        """
         return self._algorithm
 
     def get_algorithm(self) -> Algorithm:

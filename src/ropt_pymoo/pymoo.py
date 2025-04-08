@@ -16,7 +16,7 @@ from ropt.plugins.optimizer.utils import (
     get_masked_linear_constraints,
 )
 
-from ._config import ParametersConfig
+from .config import ParametersConfig
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -98,7 +98,22 @@ class _Problem(Problem):  # type: ignore[misc]
 
 
 class PyMooOptimizer(Optimizer):
-    """Plugin class for optimization via pymoo."""
+    """Pymoo optimization backend for ropt.
+
+    This class provides an interface to several optimization algorithms from
+    [`pymoo`](https://pymoo.org/), enabling their use within `ropt`.
+
+    To select an optimizer, set the `method` field within the
+    [`optimizer`][ropt.config.enopt.OptimizerConfig] section of the
+    [`EnOptConfig`][ropt.config.enopt.EnOptConfig] configuration object to the
+    desired algorithm's name. The name should be a fully qualified class name
+    within the `pymoo.algorithms` module (e.g., `soo.nonconvex.ga.GA`).
+
+    For algorithm-specific options, use the `options` dictionary within the
+    [`optimizer`][ropt.config.enopt.OptimizerConfig] section, which will be
+    parsed into a [`ParametersConfig`][ropt_pymoo.config.ParametersConfig]
+    object.
+    """
 
     def __init__(
         self, config: EnOptConfig, optimizer_callback: OptimizerCallback
