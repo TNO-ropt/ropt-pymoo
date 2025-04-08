@@ -303,3 +303,17 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
             if class_.__name__ == class_name:
                 return True
         return False
+
+    @classmethod
+    def validate_options(
+        cls, method: str, options: dict[str, Any] | list[str] | None
+    ) -> None:
+        """Validate the options of a given method.
+
+        See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
+
+        # noqa
+        """
+        if options is not None:
+            _, _, method = method.rpartition("/")
+            ParametersConfig.model_validate(options, context=method)
