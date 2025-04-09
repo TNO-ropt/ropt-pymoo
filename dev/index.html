@@ -10,6 +10,8 @@
       
       
       
+        <link rel="next" href="usage/">
+      
       
       <link rel="icon" href="assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
@@ -112,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              A Pymoo plugin for ropt
+              About
             
           </span>
         </div>
@@ -267,86 +269,84 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    A Pymoo plugin for ropt
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="." class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
-    A Pymoo plugin for ropt
+    About
     
   </span>
   
 
       </a>
       
-        
+    </li>
+  
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
     
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
       
-        <li class="md-nav__item">
-  <a href="#configuring-an-algorithm" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuring an algorithm.
-    </span>
-  </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      Reference
-    </span>
-  </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ropt_pymoo.pymoo.PyMooOptimizer" class="md-nav__link">
-    <span class="md-ellipsis">
-      PyMooOptimizer
-    </span>
-  </a>
   
-</li>
-      
-    </ul>
   
-</nav>
+    <li class="md-nav__item">
+      <a href="usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="example/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -370,50 +370,6 @@
   
     
   
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuring-an-algorithm" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuring an algorithm.
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      Reference
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ropt_pymoo.pymoo.PyMooOptimizer" class="md-nav__link">
-    <span class="md-ellipsis">
-      PyMooOptimizer
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -439,157 +395,6 @@ module by providing a plugin that integrates optimization algorithms from the
 optimization framework designed for both continuous and discrete optimization
 workflows and is extensible through its plugin architecture. Installing
 <code>ropt-pymoo</code> makes these <code>pymoo</code> algorithms directly available within <code>ropt</code>.</p>
-<h2 id="usage">Usage</h2>
-<p>An optimization by ropt using the plugin works mostly as any other optimization
-run. However, there are a few things to consider:</p>
-<ol>
-<li>Gradients are not used, as <code>pymoo</code> does not seem to support passing
-   user-defined gradients. Hence, any specifications relating to gradient
-   calulcations in ropt are ignored.</li>
-<li>Some standard optimization parameters that can be specified in the
-   optimization section are ignored, specifically:<ul>
-<li><code>max_iterations</code></li>
-<li><code>tolerance</code></li>
-</ul>
-</li>
-<li>The initial values of the variables are ignored, since <code>pymoo</code> generally does
-   not use them. In ropt you still need to specify them, since the size of the
-   vector determines the number of variables. Setting it to a vector of zero
-   values is fine.</li>
-<li>Linear and non-linear constraints are both supported. Linear constraints are
-   not supported directly, but are internally converted to non-linear
-   constraints.</li>
-<li>The algorithm and its options are specified using a syntax closely following
-   the <code>pymoo</code> manual. For instance, rather than just giving an algorithm name,
-   you have to specify the full qualified name of the corresponding object as
-   found in the <code>pymoo.algorithms</code> module. For instance to specify the <code>GA</code>
-   algorithm, use: <code>soo.nonconvex.ga.GA</code>.</li>
-<li>The algorithms itself are entirely configured via the <code>options</code> field in the
-   optimization section of the ropt configuration object. Also in this case, the
-   syntax follows the <code>pymoo</code> manual. See the section below for more
-   information.</li>
-</ol>
-<h2 id="configuring-an-algorithm">Configuring an algorithm.</h2>
-<p>Configuration of any of the <code>pymoo</code> algorithms is done via the options field in
-the ropt configuration object. For instance, consider this example for starting
-a <code>GA</code> optimization from the <code>pymoo</code> manual, with a penalty constraint added:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.algorithms.soo.nonconvex.ga</span><span class="w"> </span><span class="kn">import</span> <span class="n">GA</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.operators.crossover.sbx</span><span class="w"> </span><span class="kn">import</span> <span class="n">SBX</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.operators.mutation.pm</span><span class="w"> </span><span class="kn">import</span> <span class="n">PM</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.operators.repair.rounding</span><span class="w"> </span><span class="kn">import</span> <span class="n">RoundingRepair</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.operators.sampling.rnd</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntegerRandomSampling</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymoo.constraints.as_penalty</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstraintsAsPenalty</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">method</span> <span class="o">=</span> <span class="n">GA</span><span class="p">(</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">pop_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">sampling</span><span class="o">=</span><span class="n">IntegerRandomSampling</span><span class="p">(),</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">crossover</span><span class="o">=</span><span class="n">SBX</span><span class="p">(</span><span class="n">prob</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">repair</span><span class="o">=</span><span class="n">RoundingRepair</span><span class="p">()),</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">mutation</span><span class="o">=</span><span class="n">PM</span><span class="p">(</span><span class="n">prob</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">repair</span><span class="o">=</span><span class="n">RoundingRepair</span><span class="p">()),</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">eliminate_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">)</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">res</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span><span class="n">ConstraintsAsPenalty</span><span class="p">(</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">problem</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="mf">100.0</span><span class="p">),</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">method</span><span class="p">,</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">termination</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;n_gen&#39;</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">seed</span><span class="o">=</span><span class="mi">1234</span><span class="p">,</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">)</span>
-</span></code></pre></div>
-<p>To run the equivalent optimization, we need to specify the method and the
-termination in the options field. We also  need to specify the constraints
-object, and a seed. To do this the different objects are specified with their
-parameters in a nested dictionary that will be parsed into equivalent code. For
-this example we need to pass a nested dict, for clarity displayed as yml here:
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">parameters</span><span class="p">:</span><span class="w">  </span><span class="c1"># The parameters of the GA object:</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">pop_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">sampling</span><span class="p">:</span><span class="w">  </span><span class="c1"># The sampling parameter is an object, specify its full path in pymoo:</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">operators.sampling.rnd.IntegerRandomSampling</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">crossover</span><span class="p">:</span><span class="w">  </span><span class="c1"># Also an object:</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">operators.crossover.sbx.SBX</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span><span class="w">  </span><span class="c1"># Specify the parameters passed to the crossover ojbect:</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="nt">prob</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">eta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="nt">vtype</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="nt">repair</span><span class="p">:</span><span class="w">  </span><span class="c1"># A repair object, passed to the crossover object:</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="nt">object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">operators.repair.rounding.RoundingRepair</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="nt">mutation</span><span class="p">:</span><span class="w">  </span><span class="c1"># An object:</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="nt">object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">operators.mutation.pm.PM</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span><span class="w">  </span><span class="c1"># And its parameters:</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">        </span><span class="nt">prob</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">        </span><span class="nt">eta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">        </span><span class="nt">vtype</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">        </span><span class="nt">repair</span><span class="p">:</span><span class="w">  </span><span class="c1"># A repair object, passed to the mutation object:</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="nt">object</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">operators.repair.rounding.RoundingRepair</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="nt">eliminate_duplicates</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="nt">termination</span><span class="p">:</span><span class="w">  </span><span class="c1"># Specification of the termination object:</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_gen.MaximumGenerationTermination</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">        </span><span class="nt">n_max_gen</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1"># Alternative specification for the termination, following pymoo practice:</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1"># &quot;termination&quot;: (&quot;n_iter&quot;, 30)</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="nt">constraints</span><span class="p">:</span><span class="w">  </span><span class="c1"># Specification of the constraint object:</span>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">as_penalty.ConstraintsAsPenalty</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">        </span><span class="nt">penalty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100.0</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="nt">seed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1234</span><span class="w">  </span><span class="c1"># The seed that is passed to the minimize function:</span>
-</span></code></pre></div></p>
-<h2 id="reference">Reference</h2>
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="ropt_pymoo.pymoo.PyMooOptimizer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">ropt_pymoo.pymoo.PyMooOptimizer</span>
-
-
-</h2>
-
-
-    <div class="doc doc-contents first">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" title="ropt.plugins.optimizer.base.Optimizer" href="https://tno-ropt.github.io/ropt/latest/reference/optimizer_plugins/#ropt.plugins.optimizer.base.Optimizer">Optimizer</a></code></p>
-
-
-        <p>Pymoo optimization backend for ropt.</p>
-<p>This class provides an interface to several optimization algorithms from
-<a href="https://pymoo.org/"><code>pymoo</code></a>, enabling their use within <code>ropt</code>.</p>
-<p>To select an optimizer, set the <code>method</code> field within the
-<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.OptimizerConfig"><code>optimizer</code></a> section of the
-<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.EnOptConfig"><code>EnOptConfig</code></a> configuration object to the
-desired algorithm's name. Most methods support the general options defined
-in the <a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.EnOptConfig"><code>EnOptConfig</code></a> object. For
-algorithm-specific options, use the <code>options</code> dictionary within the
-<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.OptimizerConfig"><code>optimizer</code></a> section.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
 
 
 
