@@ -1,6 +1,6 @@
 # A Pymoo plugin for `ropt`
 
-The `ropt-dakota` package extends the [`ropt`](https://tno-ropt.github.io/ropt/dev/)
+The `ropt-pymoo` package extends the [`ropt`](https://tno-ropt.github.io/ropt/dev/)
 module by providing a plugin that integrates optimization algorithms from the
 [`pymoo`](https://pymoo.org/) toolkit.  `ropt` itself is a robust
 optimization framework designed for both continuous and discrete optimization
