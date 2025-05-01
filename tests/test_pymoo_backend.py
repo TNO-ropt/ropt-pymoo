@@ -2,8 +2,13 @@ from typing import Any
 
 import numpy as np
 import pytest
-from ropt.enums import OptimizerExitCode
-from ropt.plan import BasicOptimizer
+from numpy.typing import ArrayLike, NDArray
+from ropt.config.enopt import EnOptConfig
+from ropt.enums import EventType, OptimizerExitCode
+from ropt.plan import BasicOptimizer, Event
+from ropt.results import FunctionResults
+from ropt.transforms import OptModelTransforms
+from ropt.transforms.base import NonLinearConstraintTransform, ObjectiveTransform
 
 
 @pytest.fixture(name="enopt_config")
@@ -11,6 +16,8 @@ def enopt_config_fixture() -> dict[str, Any]:
     return {
         "variables": {
             "initial_values": [0.2, 0.0, 0.1],
+            "lower_bounds": [-1.0, -1.0, -1.0],
+            "upper_bounds": [1.0, 1.0, 1.0],
         },
         "optimizer": {
             "method": "soo.nonconvex.nelder.NelderMead",
@@ -68,8 +75,6 @@ def test_pymoo_ineq_nonlinear_constraints(
     test_functions: Any,
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": lower_bounds,
         "upper_bounds": upper_bounds,
@@ -93,8 +98,6 @@ def test_pymoo_eq_nonlinear_constraints(
     test_functions: Any,
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 1.0,
         "upper_bounds": 1.0,
@@ -123,8 +126,6 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
     test_functions: Any,
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": [0.0],
         "upper_bounds": [0.3],
@@ -144,8 +145,6 @@ def test_pymoo_le_ge_linear_constraints(
     enopt_config: dict[str, Any], evaluator: Any, parallel: bool
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1]],
         "lower_bounds": [-np.inf],
@@ -166,8 +165,6 @@ def test_pymoo_eq_linear_constraints(
     enopt_config: dict[str, Any], evaluator: Any, parallel: bool
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1], [0, 1, 1]],
         "lower_bounds": [1.0, 0.75],
@@ -188,8 +185,6 @@ def test_pymoo_le_ge_linear_constraints_two_sided(
     enopt_config: Any, evaluator: Any, parallel: bool
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1], [1, 0, 1]],
         "lower_bounds": [-np.inf, 0.0],
@@ -254,8 +249,6 @@ def test_pymoo_constraint_handling(
     test_functions: Any,
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
-    enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": -np.inf,
         "upper_bounds": 0.4,
@@ -348,3 +341,310 @@ def test_pymoo_bound_constraints_no_failure_handling(
     variables2 = plan.variables
     assert variables2 is not None
     assert not np.all(np.equal(variables1, variables2))
+
+
+class ObjectiveScaler(ObjectiveTransform):
+    def __init__(self, scales: ArrayLike) -> None:
+        self._scales = np.asarray(scales, dtype=np.float64)
+        self._set = True
+
+    def set_scales(self, scales: ArrayLike) -> None:
+        if self._set:
+            self._scales = np.asarray(scales, dtype=np.float64)
+            self._set = False
+
+    def to_optimizer(self, objectives: NDArray[np.float64]) -> NDArray[np.float64]:
+        return objectives / self._scales
+
+    def from_optimizer(self, objectives: NDArray[np.float64]) -> NDArray[np.float64]:
+        return objectives * self._scales
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_pymoo_objective_with_scaler(
+    enopt_config: Any, evaluator: Any, parallel: bool, test_functions: Any
+) -> None:
+    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
+    config = EnOptConfig.model_validate(enopt_config)
+    results1 = BasicOptimizer(enopt_config, evaluator()).run().results
+    assert results1 is not None
+    assert results1.functions is not None
+    variables1 = results1.evaluations.variables
+    objectives1 = results1.functions.objectives
+    assert np.allclose(variables1, [0.0, 0.0, 0.5], atol=0.02)
+    assert np.allclose(objectives1, [0.5, 4.5], atol=0.02)
+
+    def function1(variables: NDArray[np.float64]) -> float:
+        return float(test_functions[0](variables))
+
+    def function2(variables: NDArray[np.float64]) -> float:
+        return float(test_functions[1](variables))
+
+    init1 = test_functions[1](config.variables.initial_values)
+    transforms = OptModelTransforms(
+        objectives=ObjectiveScaler(np.array([init1, init1]))
+    )
+    config = EnOptConfig.model_validate(enopt_config, context=transforms)
+
+    checked = False
+
+    def check_value(event: Event) -> None:
+        nonlocal checked
+        results = event.data.get("results", ())
+        for item in results:
+            if isinstance(item, FunctionResults) and not checked:
+                checked = True
+                assert item.functions is not None
+                assert item.functions.objectives is not None
+                objective = test_functions[1](item.evaluations.variables)
+                assert np.allclose(item.functions.objectives[-1], objective / init1)
+                assert config.transforms is not None
+                transformed = item.transform_from_optimizer(config.transforms)
+                assert transformed.functions is not None
+                assert transformed.functions.objectives is not None
+                assert np.allclose(transformed.functions.objectives[-1], objective)
+
+    optimizer = BasicOptimizer(
+        EnOptConfig.model_validate(enopt_config, context=transforms),
+        evaluator([function1, function2]),
+    )
+    optimizer._observers.append(  # noqa: SLF001
+        (EventType.FINISHED_EVALUATION, check_value)
+    )
+    results2 = optimizer.run().results
+    assert results2 is not None
+    assert np.allclose(results2.evaluations.variables, variables1, atol=0.02)
+    assert results2.functions is not None
+    assert np.allclose(objectives1, results2.functions.objectives, atol=0.025)
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_pymoo_objective_with_lazy_scaler(
+    enopt_config: Any, evaluator: Any, parallel: bool, test_functions: Any
+) -> None:
+    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
+    config = EnOptConfig.model_validate(enopt_config)
+    results1 = BasicOptimizer(enopt_config, evaluator()).run().results
+    assert results1 is not None
+    assert results1.functions is not None
+    variables1 = results1.evaluations.variables
+    objectives1 = results1.functions.objectives
+    assert np.allclose(variables1, [0.0, 0.0, 0.5], atol=0.02)
+    assert np.allclose(objectives1, [0.5, 4.5], atol=0.02)
+
+    objective_transform = ObjectiveScaler(np.array([1.0, 1.0]))
+    transforms = OptModelTransforms(objectives=objective_transform)
+    config = EnOptConfig.model_validate(enopt_config, context=transforms)
+
+    def function1(variables: NDArray[np.float64]) -> float:
+        objective1 = test_functions[1](variables)
+        objective_transform.set_scales([objective1, objective1])
+        return float(test_functions[0](variables))
+
+    def function2(variables: NDArray[np.float64]) -> float:
+        return float(test_functions[1](variables))
+
+    checked = False
+
+    def check_value(event: Event) -> None:
+        nonlocal checked
+        results = event.data.get("results", ())
+        for item in results:
+            if isinstance(item, FunctionResults) and not checked:
+                checked = True
+                assert item.functions is not None
+                assert item.functions.objectives is not None
+                assert np.allclose(item.functions.objectives[-1], 1.0)
+                assert config.transforms is not None
+                transformed = item.transform_from_optimizer(config.transforms)
+                assert transformed.functions is not None
+                assert transformed.functions.objectives is not None
+                assert np.allclose(
+                    transformed.functions.objectives[-1],
+                    test_functions[1](item.evaluations.variables),
+                )
+
+    optimizer = BasicOptimizer(
+        EnOptConfig.model_validate(enopt_config, context=transforms),
+        evaluator([function1, function2]),
+    )
+    optimizer._observers.append(  # noqa: SLF001
+        (EventType.FINISHED_EVALUATION, check_value)
+    )
+    results2 = optimizer.run().results
+    assert results2 is not None
+    assert np.allclose(results2.evaluations.variables, variables1, atol=0.02)
+    assert results2.functions is not None
+    assert np.allclose(objectives1, results2.functions.objectives, atol=0.025)
+
+
+class ConstraintScaler(NonLinearConstraintTransform):
+    def __init__(self, scales: ArrayLike) -> None:
+        self._scales = np.asarray(scales, dtype=np.float64)
+        self._set = True
+
+    def set_scales(self, scales: ArrayLike) -> None:
+        if self._set:
+            self._scales = np.asarray(scales, dtype=np.float64)
+            self._set = False
+
+    def bounds_to_optimizer(
+        self, lower_bounds: NDArray[np.float64], upper_bounds: NDArray[np.float64]
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        return lower_bounds / self._scales, upper_bounds / self._scales
+
+    def to_optimizer(self, constraints: NDArray[np.float64]) -> NDArray[np.float64]:
+        return constraints / self._scales
+
+    def from_optimizer(self, constraints: NDArray[np.float64]) -> NDArray[np.float64]:
+        return constraints * self._scales
+
+    def nonlinear_constraint_diffs_from_optimizer(
+        self, lower_diffs: NDArray[np.float64], upper_diffs: NDArray[np.float64]
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        return lower_diffs * self._scales, upper_diffs * self._scales
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_pymoo_nonlinear_constraint_with_scaler(
+    enopt_config: Any, evaluator: Any, parallel: bool, test_functions: Any
+) -> None:
+    enopt_config["nonlinear_constraints"] = {
+        "lower_bounds": 0.0,
+        "upper_bounds": 0.4,
+    }
+    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
+
+    functions = (
+        *test_functions,
+        lambda variables: variables[0] + variables[2],
+    )
+
+    config = EnOptConfig.model_validate(enopt_config)
+    results1 = BasicOptimizer(config, evaluator(functions)).run().results
+    assert results1 is not None
+    assert results1.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
+    assert results1.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
+
+    scales = np.array(
+        functions[-1](enopt_config["variables"]["initial_values"]), ndmin=1
+    )
+    transforms = OptModelTransforms(nonlinear_constraints=ConstraintScaler(scales))
+    config = EnOptConfig.model_validate(enopt_config, context=transforms)
+    assert config.nonlinear_constraints is not None
+    assert config.nonlinear_constraints.upper_bounds == 0.4
+    bounds = config.nonlinear_constraints.get_bounds()
+    assert bounds is not None
+    assert bounds[1] == 0.4 / scales
+
+    check = True
+
+    def check_constraints(event: Event) -> None:
+        nonlocal check
+        results = event.data.get("results", ())
+        for item in results:
+            if isinstance(item, FunctionResults) and check:
+                check = False
+                assert item.functions is not None
+                assert item.functions.constraints is not None
+                constraints = functions[-1](item.evaluations.variables)
+                assert np.allclose(item.functions.constraints, constraints / scales)
+                transformed = item.transform_from_optimizer(transforms)
+                assert transformed.functions is not None
+                assert transformed.functions.constraints is not None
+                assert np.allclose(transformed.functions.constraints, constraints)
+
+    optimizer = BasicOptimizer(config, evaluator(functions))
+    optimizer._observers.append(  # noqa: SLF001
+        (EventType.FINISHED_EVALUATION, check_constraints)
+    )
+    results2 = optimizer.run().results
+    assert results2 is not None
+    assert np.allclose(
+        results2.evaluations.variables, results1.evaluations.variables, atol=0.02
+    )
+    assert results1.functions is not None
+    assert results2.functions is not None
+    assert np.allclose(
+        results1.functions.objectives, results2.functions.objectives, atol=0.025
+    )
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+def test_pymoo_nonlinear_constraint_with_lazy_scaler(
+    enopt_config: Any, evaluator: Any, parallel: bool, test_functions: Any
+) -> None:
+    enopt_config["nonlinear_constraints"] = {
+        "lower_bounds": 0.0,
+        "upper_bounds": 0.4,
+    }
+    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
+
+    functions = (
+        *test_functions,
+        lambda variables: variables[0] + variables[2],
+    )
+
+    config = EnOptConfig.model_validate(enopt_config)
+    results1 = BasicOptimizer(config, evaluator(functions)).run().results
+    assert results1 is not None
+    assert results1.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
+    assert results1.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
+
+    scaler = ConstraintScaler([1.0])
+    transforms = OptModelTransforms(nonlinear_constraints=scaler)
+
+    config = EnOptConfig.model_validate(enopt_config, context=transforms)
+    assert config.nonlinear_constraints is not None
+    assert config.nonlinear_constraints.upper_bounds == 0.4
+    bounds = config.nonlinear_constraints.get_bounds()
+    assert bounds is not None
+    assert bounds[1] == 0.4
+
+    def constraint_function(variables: NDArray[np.float64]) -> float:
+        value = float(variables[0] + variables[2])
+        scaler.set_scales(value)
+        return value
+
+    functions = (*test_functions, constraint_function)
+
+    check = True
+
+    def check_constraints(event: Event) -> None:
+        nonlocal check
+        results = event.data.get("results", ())
+        for item in results:
+            if isinstance(item, FunctionResults) and check:
+                check = False
+                assert config.nonlinear_constraints is not None
+                _, upper_bounds = config.nonlinear_constraints.get_bounds()
+                value = float(
+                    item.evaluations.variables[0] + item.evaluations.variables[2]
+                )
+                assert np.allclose(upper_bounds, 0.4 / value)
+                assert item.functions is not None
+                assert item.functions.constraints is not None
+                assert np.allclose(item.functions.constraints, 1.0)
+                transformed = item.transform_from_optimizer(transforms)
+                assert transformed.functions is not None
+                assert transformed.functions.constraints is not None
+                assert np.allclose(transformed.functions.constraints, value)
+
+    optimizer = BasicOptimizer(config, evaluator(functions))
+    optimizer._observers.append(  # noqa: SLF001
+        (EventType.FINISHED_EVALUATION, check_constraints)
+    )
+    results2 = optimizer.run().results
+    assert results2 is not None
+    assert np.allclose(
+        results2.evaluations.variables, results1.evaluations.variables, atol=0.02
+    )
+    assert results1.functions is not None
+    assert results2.functions is not None
+    assert np.allclose(
+        results1.functions.objectives, results2.functions.objectives, atol=0.025
+    )
