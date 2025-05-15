@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, TextIO
 import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from ropt.plugins.optimizer.base import Optimizer, OptimizerCallback, OptimizerPlugin
+from ropt.plugins.optimizer.base import Optimizer, OptimizerPlugin
 from ropt.plugins.optimizer.utils import (
     NormalizedConstraints,
     get_masked_linear_constraints,
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
     from ropt.config.enopt import EnOptConfig
+    from ropt.optimization import OptimizerCallback
 
 # These algorithms do not allow NaN function values:
 _NO_FAILURE_HANDLING: Final = {"NelderMead"}
@@ -213,11 +214,11 @@ class PyMooOptimizer(Optimizer):
         return lower_bounds, upper_bounds
 
     def _get_constraint_bounds(
-        self,
+        self, nonlinear_bounds: tuple[NDArray[np.float64], NDArray[np.float64]] | None
     ) -> tuple[NDArray[np.float64], NDArray[np.float64]] | None:
         bounds = []
-        if self._config.nonlinear_constraints is not None:
-            bounds.append(self._config.nonlinear_constraints.get_bounds())
+        if nonlinear_bounds is not None:
+            bounds.append(nonlinear_bounds)
         if self._linear_constraint_bounds is not None:
             bounds.append(self._linear_constraint_bounds)
         if bounds:
@@ -235,7 +236,15 @@ class PyMooOptimizer(Optimizer):
                 self._config
             )
             self._linear_constraint_bounds = (lin_lower, lin_upper)
-        if (bounds := self._get_constraint_bounds()) is not None:
+        nonlinear_bounds = (
+            None
+            if self._config.nonlinear_constraints is None
+            else (
+                self._config.nonlinear_constraints.lower_bounds,
+                self._config.nonlinear_constraints.upper_bounds,
+            )
+        )
+        if (bounds := self._get_constraint_bounds(nonlinear_bounds)) is not None:
             normalized_constraints = NormalizedConstraints(flip=True)
             normalized_constraints.set_bounds(*bounds)
             return normalized_constraints
@@ -284,16 +293,20 @@ class PyMooOptimizer(Optimizer):
                 self._normalized_constraints.reset()
         if self._cached_function is None:
             self._cached_variables = variables.copy()
-            function, _ = self._optimizer_callback(
+            callback_result = self._optimizer_callback(
                 variables,
                 return_functions=True,
                 return_gradients=False,
             )
+            function = callback_result.functions
             # The optimizer callback may change non-linear constraint bounds:
             if self._normalized_constraints is not None:
-                bounds = self._get_constraint_bounds()
+                bounds = self._get_constraint_bounds(
+                    callback_result.nonlinear_constraint_bounds
+                )
                 assert bounds is not None
                 self._normalized_constraints.set_bounds(*bounds)
+            assert function is not None
             if self._allow_nan:
                 function = np.where(np.isnan(function), np.inf, function)
             self._cached_function = function.copy()

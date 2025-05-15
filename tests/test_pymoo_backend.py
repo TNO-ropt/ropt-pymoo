@@ -29,9 +29,13 @@ def enopt_config_fixture() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize("parallel", [False, True])
+@pytest.mark.parametrize(
+    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
+)
 def test_pymoo_bound_constraints(
-    enopt_config: dict[str, Any], evaluator: Any, parallel: bool
+    enopt_config: dict[str, Any], evaluator: Any, parallel: bool, external: str
 ) -> None:
+    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     enopt_config["optimizer"]["parallel"] = parallel
@@ -508,15 +512,22 @@ class ConstraintScaler(NonLinearConstraintTransform):
 
 
 @pytest.mark.parametrize("parallel", [False, True])
+@pytest.mark.parametrize(
+    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
+)
 def test_pymoo_nonlinear_constraint_with_scaler(
-    enopt_config: Any, evaluator: Any, parallel: bool, test_functions: Any
+    enopt_config: Any,
+    evaluator: Any,
+    parallel: bool,
+    test_functions: Any,
+    external: str,
 ) -> None:
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 0.0,
         "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
 
     functions = (
         *test_functions,
@@ -536,7 +547,11 @@ def test_pymoo_nonlinear_constraint_with_scaler(
     config = EnOptConfig.model_validate(enopt_config, context=transforms)
     assert config.nonlinear_constraints is not None
     assert config.nonlinear_constraints.upper_bounds == 0.4
-    bounds = config.nonlinear_constraints.get_bounds()
+    assert transforms.nonlinear_constraints is not None
+    bounds = transforms.nonlinear_constraints.bounds_to_optimizer(
+        config.nonlinear_constraints.lower_bounds,
+        config.nonlinear_constraints.upper_bounds,
+    )
     assert bounds is not None
     assert bounds[1] == 0.4 / scales
 
@@ -574,15 +589,22 @@ def test_pymoo_nonlinear_constraint_with_scaler(
 
 
 @pytest.mark.parametrize("parallel", [False, True])
+@pytest.mark.parametrize(
+    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
+)
 def test_pymoo_nonlinear_constraint_with_lazy_scaler(
-    enopt_config: Any, evaluator: Any, parallel: bool, test_functions: Any
+    enopt_config: Any,
+    evaluator: Any,
+    parallel: bool,
+    test_functions: Any,
+    external: str,
 ) -> None:
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 0.0,
         "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
 
     functions = (
         *test_functions,
@@ -601,7 +623,11 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
     config = EnOptConfig.model_validate(enopt_config, context=transforms)
     assert config.nonlinear_constraints is not None
     assert config.nonlinear_constraints.upper_bounds == 0.4
-    bounds = config.nonlinear_constraints.get_bounds()
+    assert transforms.nonlinear_constraints is not None
+    bounds = transforms.nonlinear_constraints.bounds_to_optimizer(
+        config.nonlinear_constraints.lower_bounds,
+        config.nonlinear_constraints.upper_bounds,
+    )
     assert bounds is not None
     assert bounds[1] == 0.4
 
@@ -621,7 +647,11 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
             if isinstance(item, FunctionResults) and check:
                 check = False
                 assert config.nonlinear_constraints is not None
-                _, upper_bounds = config.nonlinear_constraints.get_bounds()
+                assert transforms.nonlinear_constraints is not None
+                _, upper_bounds = transforms.nonlinear_constraints.bounds_to_optimizer(
+                    config.nonlinear_constraints.lower_bounds,
+                    config.nonlinear_constraints.upper_bounds,
+                )
                 value = float(
                     item.evaluations.variables[0] + item.evaluations.variables[2]
                 )
