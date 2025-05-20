@@ -403,8 +403,7 @@ def test_pymoo_objective_with_scaler(
                 assert item.functions.objectives is not None
                 objective = test_functions[1](item.evaluations.variables)
                 assert np.allclose(item.functions.objectives[-1], objective / init1)
-                assert config.transforms is not None
-                transformed = item.transform_from_optimizer(config.transforms)
+                transformed = item.transform_from_optimizer()
                 assert transformed.functions is not None
                 assert transformed.functions.objectives is not None
                 assert np.allclose(transformed.functions.objectives[-1], objective)
@@ -429,7 +428,6 @@ def test_pymoo_objective_with_lazy_scaler(
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
     enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
-    config = EnOptConfig.model_validate(enopt_config)
     results1 = BasicOptimizer(enopt_config, evaluator()).run().results
     assert results1 is not None
     assert results1.functions is not None
@@ -440,7 +438,6 @@ def test_pymoo_objective_with_lazy_scaler(
 
     objective_transform = ObjectiveScaler(np.array([1.0, 1.0]))
     transforms = OptModelTransforms(objectives=objective_transform)
-    config = EnOptConfig.model_validate(enopt_config, context=transforms)
 
     def function1(variables: NDArray[np.float64]) -> float:
         objective1 = test_functions[1](variables)
@@ -461,8 +458,7 @@ def test_pymoo_objective_with_lazy_scaler(
                 assert item.functions is not None
                 assert item.functions.objectives is not None
                 assert np.allclose(item.functions.objectives[-1], 1.0)
-                assert config.transforms is not None
-                transformed = item.transform_from_optimizer(config.transforms)
+                transformed = item.transform_from_optimizer()
                 assert transformed.functions is not None
                 assert transformed.functions.objectives is not None
                 assert np.allclose(
@@ -567,7 +563,7 @@ def test_pymoo_nonlinear_constraint_with_scaler(
                 assert item.functions.constraints is not None
                 constraints = functions[-1](item.evaluations.variables)
                 assert np.allclose(item.functions.constraints, constraints / scales)
-                transformed = item.transform_from_optimizer(transforms)
+                transformed = item.transform_from_optimizer()
                 assert transformed.functions is not None
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, constraints)
@@ -659,7 +655,7 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
                 assert item.functions is not None
                 assert item.functions.constraints is not None
                 assert np.allclose(item.functions.constraints, 1.0)
-                transformed = item.transform_from_optimizer(transforms)
+                transformed = item.transform_from_optimizer()
                 assert transformed.functions is not None
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, value)
