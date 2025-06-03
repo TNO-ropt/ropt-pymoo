@@ -370,7 +370,6 @@ def test_pymoo_objective_with_scaler(
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
     enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
-    config = EnOptConfig.model_validate(enopt_config)
     results1 = BasicOptimizer(enopt_config, evaluator()).run().results
     assert results1 is not None
     assert results1.functions is not None
@@ -385,11 +384,10 @@ def test_pymoo_objective_with_scaler(
     def function2(variables: NDArray[np.float64]) -> float:
         return float(test_functions[1](variables))
 
-    init1 = test_functions[1](config.variables.initial_values)
+    init1 = test_functions[1](enopt_config["variables"]["initial_values"])
     transforms = OptModelTransforms(
         objectives=ObjectiveScaler(np.array([init1, init1]))
     )
-    config = EnOptConfig.model_validate(enopt_config, context=transforms)
 
     checked = False
 
@@ -403,16 +401,13 @@ def test_pymoo_objective_with_scaler(
                 assert item.functions.objectives is not None
                 objective = test_functions[1](item.evaluations.variables)
                 assert np.allclose(item.functions.objectives[-1], objective / init1)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"].transforms
-                )
+                transformed = item.transform_from_optimizer(event.data["transforms"])
                 assert transformed.functions is not None
                 assert transformed.functions.objectives is not None
                 assert np.allclose(transformed.functions.objectives[-1], objective)
 
     optimizer = BasicOptimizer(
-        EnOptConfig.model_validate(enopt_config, context=transforms),
-        evaluator([function1, function2]),
+        enopt_config, evaluator([function1, function2]), transforms=transforms
     )
     optimizer._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_value)
@@ -460,9 +455,7 @@ def test_pymoo_objective_with_lazy_scaler(
                 assert item.functions is not None
                 assert item.functions.objectives is not None
                 assert np.allclose(item.functions.objectives[-1], 1.0)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"].transforms
-                )
+                transformed = item.transform_from_optimizer(event.data["transforms"])
                 assert transformed.functions is not None
                 assert transformed.functions.objectives is not None
                 assert np.allclose(
@@ -471,8 +464,7 @@ def test_pymoo_objective_with_lazy_scaler(
                 )
 
     optimizer = BasicOptimizer(
-        EnOptConfig.model_validate(enopt_config, context=transforms),
-        evaluator([function1, function2]),
+        enopt_config, evaluator([function1, function2]), transforms=transforms
     )
     optimizer._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_value)
@@ -534,8 +526,7 @@ def test_pymoo_nonlinear_constraint_with_scaler(
         lambda variables: variables[0] + variables[2],
     )
 
-    config = EnOptConfig.model_validate(enopt_config)
-    results1 = BasicOptimizer(config, evaluator(functions)).run().results
+    results1 = BasicOptimizer(enopt_config, evaluator(functions)).run().results
     assert results1 is not None
     assert results1.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
     assert results1.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
@@ -567,14 +558,14 @@ def test_pymoo_nonlinear_constraint_with_scaler(
                 assert item.functions.constraints is not None
                 constraints = functions[-1](item.evaluations.variables)
                 assert np.allclose(item.functions.constraints, constraints / scales)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"].transforms
-                )
+                transformed = item.transform_from_optimizer(event.data["transforms"])
                 assert transformed.functions is not None
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, constraints)
 
-    optimizer = BasicOptimizer(config, evaluator(functions))
+    optimizer = BasicOptimizer(
+        enopt_config, evaluator(functions), transforms=transforms
+    )
     optimizer._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_constraints)
     )
@@ -613,8 +604,7 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
         lambda variables: variables[0] + variables[2],
     )
 
-    config = EnOptConfig.model_validate(enopt_config)
-    results1 = BasicOptimizer(config, evaluator(functions)).run().results
+    results1 = BasicOptimizer(enopt_config, evaluator(functions)).run().results
     assert results1 is not None
     assert results1.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
     assert results1.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
@@ -644,6 +634,7 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
 
     def check_constraints(event: Event) -> None:
         nonlocal check
+        config = event.data["config"]
         results = event.data.get("results", ())
         for item in results:
             if isinstance(item, FunctionResults) and check:
@@ -661,14 +652,14 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
                 assert item.functions is not None
                 assert item.functions.constraints is not None
                 assert np.allclose(item.functions.constraints, 1.0)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"].transforms
-                )
+                transformed = item.transform_from_optimizer(event.data["transforms"])
                 assert transformed.functions is not None
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, value)
 
-    optimizer = BasicOptimizer(config, evaluator(functions))
+    optimizer = BasicOptimizer(
+        enopt_config, evaluator(functions), transforms=transforms
+    )
     optimizer._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_constraints)
     )
