@@ -157,8 +157,7 @@ class PyMooOptimizer(Optimizer):
         self._cached_variables = None
         self._cached_function = None
 
-        if self._config.variables.mask is not None:
-            initial_values = initial_values[self._config.variables.mask]
+        initial_values = initial_values[self._config.variables.mask]
 
         problem = _Problem(
             n_var=initial_values.size,
@@ -206,11 +205,8 @@ class PyMooOptimizer(Optimizer):
         return self._config.optimizer.parallel
 
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-        lower_bounds = self._config.variables.lower_bounds
-        upper_bounds = self._config.variables.upper_bounds
-        if self._config.variables.mask is not None:
-            lower_bounds = lower_bounds[self._config.variables.mask]
-            upper_bounds = upper_bounds[self._config.variables.mask]
+        lower_bounds = self._config.variables.lower_bounds[self._config.variables.mask]
+        upper_bounds = self._config.variables.upper_bounds[self._config.variables.mask]
         return lower_bounds, upper_bounds
 
     def _get_constraint_bounds(
