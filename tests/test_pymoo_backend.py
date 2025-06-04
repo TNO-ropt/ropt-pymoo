@@ -3,7 +3,7 @@ from typing import Any
 import numpy as np
 import pytest
 from numpy.typing import ArrayLike, NDArray
-from ropt.config.enopt import EnOptConfig
+from ropt.config import EnOptConfig
 from ropt.enums import EventType, ExitCode
 from ropt.plan import BasicOptimizer, Event
 from ropt.results import FunctionResults

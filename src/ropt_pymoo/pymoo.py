@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import NDArray
-    from ropt.config.enopt import EnOptConfig
+    from ropt.config import EnOptConfig
     from ropt.optimization import OptimizerCallback
 
 # These algorithms do not allow NaN function values:
@@ -107,13 +107,13 @@ class PyMooOptimizer(Optimizer):
     [`pymoo`](https://pymoo.org/), enabling their use within `ropt`.
 
     To select an optimizer, set the `method` field within the
-    [`optimizer`][ropt.config.enopt.OptimizerConfig] section of the
-    [`EnOptConfig`][ropt.config.enopt.EnOptConfig] configuration object to the
+    [`optimizer`][ropt.config.OptimizerConfig] section of the
+    [`EnOptConfig`][ropt.config.EnOptConfig] configuration object to the
     desired algorithm's name. The name should be a fully qualified class name
     within the `pymoo.algorithms` module (e.g., `soo.nonconvex.ga.GA`).
 
     For algorithm-specific options, use the `options` dictionary within the
-    [`optimizer`][ropt.config.enopt.OptimizerConfig] section, which will be
+    [`optimizer`][ropt.config.OptimizerConfig] section, which will be
     parsed into a [`ParametersConfig`][ropt_pymoo.config.ParametersConfig]
     object.
     """
