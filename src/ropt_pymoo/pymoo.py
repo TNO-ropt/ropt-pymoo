@@ -135,12 +135,11 @@ class PyMooOptimizer(Optimizer):
             else {}
         )
         _, _, method = self._config.optimizer.method.rpartition("/")
-        self._normalized_constraints = self._init_constraints()
-        self._parameters = ParametersConfig.model_validate(options, context=method)
-        self._bounds = self._get_bounds()
         self._cached_variables: NDArray[np.float64] | None = None
         self._cached_function: NDArray[np.float64] | None = None
         self._stdout: TextIO
+
+        self._parameters = ParametersConfig.model_validate(options, context=method)
 
         self._allow_nan = True
         for algorithm in _NO_FAILURE_HANDLING:
@@ -157,10 +156,11 @@ class PyMooOptimizer(Optimizer):
         self._cached_variables = None
         self._cached_function = None
 
-        initial_values = initial_values[self._config.variables.mask]
+        self._normalized_constraints = self._init_constraints(initial_values)
+        self._bounds = self._get_bounds()
 
         problem = _Problem(
-            n_var=initial_values.size,
+            n_var=initial_values[self._config.variables.mask].size,
             lower=self._bounds[0],
             upper=self._bounds[1],
             function=self._calculate_objective,
@@ -222,14 +222,16 @@ class PyMooOptimizer(Optimizer):
             return np.concatenate(lower_bounds), np.concatenate(upper_bounds)
         return None
 
-    def _init_constraints(self) -> NormalizedConstraints | None:
+    def _init_constraints(
+        self, initial_values: NDArray[np.float64]
+    ) -> NormalizedConstraints | None:
         self._lin_coef: NDArray[np.float64] | None = None
         self._linear_constraint_bounds: (
             tuple[NDArray[np.float64], NDArray[np.float64]] | None
         ) = None
         if self._config.linear_constraints is not None:
             self._lin_coef, lin_lower, lin_upper = get_masked_linear_constraints(
-                self._config
+                self._config, initial_values
             )
             self._linear_constraint_bounds = (lin_lower, lin_upper)
         nonlinear_bounds = (
