@@ -13,10 +13,12 @@ from ruamel import yaml
 # For convenience we use a YAML file to store the optimizer options:
 options = yaml.YAML(typ="safe", pure=True).load(Path("discrete_ga.yml"))
 
+initial_values = 2 * [0.0]
+
 CONFIG: dict[str, Any] = {
     "variables": {
         # Ignored, but needed to establish the number of variables:
-        "initial_values": 2 * [0.0],
+        "variable_count": len(initial_values),
         "lower_bounds": [0.0, 0.0],
         "upper_bounds": [10.0, 10.0],
     },
@@ -62,7 +64,10 @@ def report(results: tuple[Results, ...]) -> None:
 def run_optimization(config: dict[str, Any]) -> None:
     """Run the optimization."""
     optimal_result = (
-        BasicOptimizer(config, function).set_results_callback(report).run().results
+        BasicOptimizer(config, function)
+        .set_results_callback(report)
+        .run(initial_values)
+        .results
     )
     assert optimal_result is not None
     assert optimal_result.functions is not None
