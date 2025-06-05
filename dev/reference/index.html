@@ -552,12 +552,12 @@
 <p>This class provides an interface to several optimization algorithms from
 <a href="https://pymoo.org/"><code>pymoo</code></a>, enabling their use within <code>ropt</code>.</p>
 <p>To select an optimizer, set the <code>method</code> field within the
-<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.OptimizerConfig"><code>optimizer</code></a> section of the
-<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.EnOptConfig"><code>EnOptConfig</code></a> configuration object to the
+<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.OptimizerConfig"><code>optimizer</code></a> section of the
+<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.EnOptConfig"><code>EnOptConfig</code></a> configuration object to the
 desired algorithm's name. The name should be a fully qualified class name
 within the <code>pymoo.algorithms</code> module (e.g., <code>soo.nonconvex.ga.GA</code>).</p>
 <p>For algorithm-specific options, use the <code>options</code> dictionary within the
-<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.enopt.OptimizerConfig"><code>optimizer</code></a> section, which will be
+<a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/enopt_config/#ropt.config.OptimizerConfig"><code>optimizer</code></a> section, which will be
 parsed into a <a class="autorefs autorefs-internal" title="            ropt_pymoo.config.ParametersConfig" href="#ropt_pymoo.config.ParametersConfig"><code>ParametersConfig</code></a>
 object.</p>
 
