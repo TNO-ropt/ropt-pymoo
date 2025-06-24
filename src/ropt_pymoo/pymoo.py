@@ -358,5 +358,8 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
         # noqa
         """
         if options is not None:
+            if not isinstance(options, dict):
+                msg = "Pymoo optimizer options must be a dictionary"
+                raise ValueError(msg)
             _, _, method = method.rpartition("/")
             ParametersConfig.model_validate(options, context=method)
