@@ -4,16 +4,13 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from typing import TYPE_CHECKING, Any, Self
+from typing import Any, Callable, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 from pymoo.core.algorithm import Algorithm  # noqa: TC002
 from pymoo.core.operator import Operator  # noqa: TC002
 from pymoo.core.termination import Termination  # noqa: TC002
 from pymoo.termination import get_termination
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class _ParametersBaseModel(BaseModel):

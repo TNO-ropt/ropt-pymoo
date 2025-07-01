@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import importlib
 import inspect
-from typing import TYPE_CHECKING, Any, Final, TextIO
+from typing import TYPE_CHECKING, Any, Callable, Final, TextIO
 
 import numpy as np
 from pymoo.core.problem import Problem
@@ -19,8 +19,6 @@ from ropt.plugins.optimizer.utils import (
 from .config import ParametersConfig
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from numpy.typing import NDArray
     from ropt.config import EnOptConfig
     from ropt.optimization import OptimizerCallback
