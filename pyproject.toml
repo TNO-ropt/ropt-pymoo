@@ -42,7 +42,6 @@ write_to = "src/ropt_pymoo/version.py"
 markers = ["external: external optimizer marker"]
 filterwarnings = [
     "error",
-    'ignore:.*The ``feasible`` property for ``pymoo.core.individual.Individual`` is deprecated.*:DeprecationWarning',
     'ignore:numpy.ndarray size changed, may indicate binary incompatibility.*:RuntimeWarning',
 ]
 
