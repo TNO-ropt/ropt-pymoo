@@ -135,6 +135,9 @@ class PyMooOptimizer(Optimizer):
             else {}
         )
         _, _, method = self._config.optimizer.method.rpartition("/")
+        if method == "default":
+            msg = "The pymoo backend does not support a 'default' method"
+            raise ValueError(msg)
         self._cached_variables: NDArray[np.float64] | None = None
         self._cached_function: NDArray[np.float64] | None = None
         self._stdout: TextIO
@@ -358,6 +361,9 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
         # noqa
         """
         if options is not None:
+            if method == "default":
+                msg = "The pymoo backend does not support a 'default' method"
+                raise ValueError(msg)
             if not isinstance(options, dict):
                 msg = "Pymoo optimizer options must be a dictionary"
                 raise ValueError(msg)
