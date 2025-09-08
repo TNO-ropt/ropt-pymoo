@@ -1,6 +1,5 @@
 """Discrete optimization example."""
 
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -8,16 +7,47 @@ from numpy.typing import NDArray
 from ropt.evaluator import EvaluatorContext, EvaluatorResult
 from ropt.plan import BasicOptimizer
 from ropt.results import FunctionResults, Results
-from ruamel import yaml
 
-# For convenience we use a YAML file to store the optimizer options:
-options = yaml.YAML(typ="safe", pure=True).load(Path("discrete_ga.yml"))
+options = {
+    "parameters": {
+        "pop_size": 20,
+        "sampling": {"object": "operators.sampling.rnd.IntegerRandomSampling"},
+        "crossover": {
+            "object": "operators.crossover.sbx.SBX",
+            "parameters": {
+                "prob": 1.0,
+                "eta": 3.0,
+                "vtype": "float",
+                "repair": {"object": "operators.repair.rounding.RoundingRepair"},
+            },
+        },
+        "mutation": {
+            "object": "operators.mutation.pm.PM",
+            "parameters": {
+                "prob": 1.0,
+                "eta": 3.0,
+                "vtype": "float",
+                "repair": {"object": "operators.repair.rounding.RoundingRepair"},
+            },
+        },
+        "eliminate_duplicates": True,
+    },
+    "termination": {
+        "name": "max_gen.MaximumGenerationTermination",
+        "parameters": {"n_max_gen": 10},
+    },
+    "constraints": {
+        "name": "as_penalty.ConstraintsAsPenalty",
+        "parameters": {"penalty": 100.0},
+    },
+    "seed": 1234,
+}
+
 
 initial_values = 2 * [0.0]
 
 CONFIG: dict[str, Any] = {
     "variables": {
-        # Ignored, but needed to establish the number of variables:
         "variable_count": len(initial_values),
         "lower_bounds": [0.0, 0.0],
         "upper_bounds": [10.0, 10.0],
