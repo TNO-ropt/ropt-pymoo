@@ -52,7 +52,7 @@ exclude = ["src/ropt/version.py", "build"]
 select = ["ALL"]
 ignore = [
     "COM812", # missing-trailing-comma
-    "E501",   # line-too-lone
+    "E501",   # line-too-long
     "S101",   # assert
 ]
 
@@ -81,13 +81,13 @@ plugins = ["pydantic.mypy"]
 module = ["pymoo.*"]
 ignore_missing_imports = true
 
-[tool.uv]
-dev-dependencies = [
-    "mike>=2.1.3",
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.5.35",
-    "mkdocstrings[python]>=0.26.1",
-    "mypy>=1.11.2",
-    "pytest>=8.3.3",
-    "ruff>=0.6.5",
+[dependency-groups]
+dev = [
+    "mike",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "mypy",
+    "pytest",
+    "ruff",
 ]
