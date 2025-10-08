@@ -68,7 +68,6 @@ class _Problem(Problem):  # type: ignore[misc]
         )
         self._function = function
         self._constraints = constraints
-        self._is_eq = is_eq
         self._parallel = parallel
 
     def _evaluate(
@@ -86,18 +85,6 @@ class _Problem(Problem):  # type: ignore[misc]
             out["H"] = constraints[:, self._is_eq]
         if self._is_ieq is not None:
             out["G"] = constraints[:, self._is_ieq]
-
-    def __deepcopy__(self, memo: Any) -> _Problem:  # noqa: ANN401
-        # Deep copy does not work on the plain object due to the callbacks.
-        return _Problem(
-            copy.deepcopy(self.n_var),
-            lower=copy.deepcopy(self.xl),
-            upper=copy.deepcopy(self.xu),
-            function=self._function,
-            constraints=self._constraints,
-            is_eq=copy.deepcopy(self._is_eq),
-            parallel=copy.deepcopy(self._parallel),
-        )
 
 
 class PyMooOptimizer(Optimizer):
