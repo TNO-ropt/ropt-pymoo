@@ -13,7 +13,7 @@ information.
 
 
 ## Dependencies
-This code has been tested with Python version 3.11.
+This code has been tested with Python versions 3.11-3.14.
 
 The plugin requires the [`pymoo`](https://pymoo.org/) optimizer.
 

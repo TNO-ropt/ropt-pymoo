@@ -41,8 +41,11 @@ class _Problem(Problem):  # type: ignore[misc]
         *,
         parallel: bool = True,
     ) -> None:
+        self._function = function
+        self._constraints = constraints
         self._is_eq: list[bool] | None = None
         self._is_ieq: list[bool] | None = None
+
         n_eq_constr = 0
         n_ieq_constr = 0
 
@@ -66,9 +69,6 @@ class _Problem(Problem):  # type: ignore[misc]
             xu=upper,
             elementwise=parallel is False,
         )
-        self._function = function
-        self._constraints = constraints
-        self._parallel = parallel
 
     def _evaluate(
         self,

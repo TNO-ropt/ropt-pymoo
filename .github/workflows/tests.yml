@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python ${{ matrix.python-version }}
@@ -32,4 +32,4 @@ jobs:
         uv sync --all-extras --dev
         uv pip install git+https://github.com/TNO-ropt/ropt
     - name: Run pytest
-      run: uv run pytest tests --run-external
+      run: UV_COMPILE_BYTECODE=1 uv run pytest tests --run-external
