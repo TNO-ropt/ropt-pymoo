@@ -5,10 +5,10 @@ import pytest
 from numpy.typing import ArrayLike, NDArray
 from ropt.config import EnOptConfig
 from ropt.enums import EventType, ExitCode
-from ropt.plan import BasicOptimizer, Event
 from ropt.results import FunctionResults
 from ropt.transforms import OptModelTransforms
 from ropt.transforms.base import NonLinearConstraintTransform, ObjectiveTransform
+from ropt.workflow import BasicOptimizer, Event
 
 initial_values = [0.2, 0.0, 0.1]
 
@@ -357,10 +357,10 @@ def test_pymoo_bound_constraints_no_failure_handling(
             return np.nan
         return test_functions[0](x)
 
-    plan = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
-    plan.run(initial_values)
-    assert plan.exit_code == ExitCode.TOO_FEW_REALIZATIONS
-    variables2 = plan.variables
+    optimizer = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
+    optimizer.run(initial_values)
+    assert optimizer.exit_code == ExitCode.TOO_FEW_REALIZATIONS
+    variables2 = optimizer.variables
     assert variables2 is not None
     assert not np.all(np.equal(variables1, variables2))
 

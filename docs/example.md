@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 from ropt.evaluator import EvaluatorContext, EvaluatorResult
-from ropt.plan import BasicOptimizer
+from ropt.workflow import BasicOptimizer
 
 options = {
     "parameters": {
