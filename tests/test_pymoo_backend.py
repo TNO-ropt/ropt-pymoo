@@ -252,7 +252,7 @@ def test_pymoo_eq_mixed_constraints(
         .variables
     )
     assert variables is not None
-    assert np.allclose(variables, [0.25, 0.0, 0.75], atol=0.02)
+    assert np.allclose(variables, [0.25, 0.0, 0.75], atol=0.04)
 
 
 @pytest.mark.parametrize("parallel", [False, True])

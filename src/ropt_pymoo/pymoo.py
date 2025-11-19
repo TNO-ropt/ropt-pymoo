@@ -67,8 +67,10 @@ class _Problem(Problem):  # type: ignore[misc]
             n_eq_constr=n_eq_constr,
             xl=lower,
             xu=upper,
-            elementwise=parallel is False,
         )
+
+        self._parallel = parallel
+        self._n_constraints = n_eq_constr + n_ieq_constr
 
     def _evaluate(
         self,
@@ -78,9 +80,19 @@ class _Problem(Problem):  # type: ignore[misc]
         **_1: Any,  # noqa: ANN401
     ) -> None:
         variables = variables.astype(np.float64)
-        out["F"] = self._function(variables)
-        if self._is_eq is not None or self._is_ieq is not None:
-            constraints = self._constraints(variables)
+        if self._parallel:
+            functions = self._function(variables)
+            if self._is_eq is not None or self._is_ieq is not None:
+                constraints = self._constraints(variables)
+        else:
+            functions = np.zeros(variables.shape[0])
+            for idx in range(variables.shape[0]):
+                functions[idx] = self._function(variables[idx])
+            if self._n_constraints > 0:
+                constraints = np.zeros((variables.shape[0], self._n_constraints))
+                for idx in range(variables.shape[0]):
+                    constraints[idx, :] = self._constraints(variables[idx])
+        out["F"] = functions
         if self._is_eq is not None:
             out["H"] = constraints[:, self._is_eq]
         if self._is_ieq is not None:
