@@ -70,11 +70,12 @@ def function(variables: NDArray[np.float64], _: EvaluatorContext) -> EvaluatorRe
     return EvaluatorResult(objectives=objectives, constraints=constraints)
 
 
-optimal_result = BasicOptimizer(CONFIG, function).run(initial_values).results
-assert optimal_result is not None
-assert optimal_result.functions is not None
-print(f"  variables: {optimal_result.evaluations.variables}")
-print(f"  objective: {optimal_result.functions.weighted_objective}\n")
+optimizer = BasicOptimizer(CONFIG, function)
+optimizer.run(initial_values)
+assert optimizer.results is not None
+assert optimizer.results.functions is not None
+print(f"  variables: {optimizer.results.evaluations.variables}")
+print(f"  objective: {optimizer.results.functions.weighted_objective}")
 ```
 
 Running this will output the following:

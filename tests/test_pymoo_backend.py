@@ -41,9 +41,12 @@ def test_pymoo_bound_constraints(
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     enopt_config["optimizer"]["parallel"] = parallel
-    variables = BasicOptimizer(enopt_config, evaluator()).run(initial_values).variables
-    assert variables is not None
-    assert np.allclose(variables, [0.15, 0.0, 0.2], atol=0.02)
+    optimizer = BasicOptimizer(enopt_config, evaluator())
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
+    )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -57,15 +60,26 @@ def test_pymoo_termination(
     enopt_config["optimizer"]["options"] = {
         "termination": {"name": "default.DefaultSingleObjectiveTermination"}
     }
-    variables1 = BasicOptimizer(enopt_config, evaluator()).run(initial_values).variables
-    assert variables1 is not None
-    assert np.allclose(variables1, [0.15, 0.0, 0.2], atol=0.02)
+    optimizer1 = BasicOptimizer(enopt_config, evaluator())
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert np.allclose(
+        optimizer1.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
+    )
 
     enopt_config["optimizer"]["options"] = {"termination": {"name": "soo"}}
-    variables2 = BasicOptimizer(enopt_config, evaluator()).run(initial_values).variables
-    assert variables2 is not None
-    assert np.allclose(variables2, [0.15, 0.0, 0.2], atol=0.02)
-    assert np.allclose(variables1, variables2, atol=0.0, rtol=1e-10)
+    optimizer2 = BasicOptimizer(enopt_config, evaluator())
+    optimizer2.run(initial_values)
+    assert optimizer2.results is not None
+    assert np.allclose(
+        optimizer2.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
+    )
+    assert np.allclose(
+        optimizer1.results.evaluations.variables,
+        optimizer2.results.evaluations.variables,
+        atol=0.0,
+        rtol=1e-10,
+    )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -91,13 +105,12 @@ def test_pymoo_ineq_nonlinear_constraints(
         *test_functions,
         lambda variables: weight * variables[0] + weight * variables[2],
     )
-    variables = (
-        BasicOptimizer(enopt_config, evaluator(test_functions))
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(enopt_config, evaluator(test_functions))
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [-0.05, 0.0, 0.45], atol=0.02
     )
-    assert variables is not None
-    assert np.allclose(variables, [-0.05, 0.0, 0.45], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -117,15 +130,14 @@ def test_pymoo_eq_nonlinear_constraints(
         *test_functions,
         lambda variables: variables[0] + variables[2],
     )
-    variables = (
-        BasicOptimizer(
-            enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
-        )
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(
+        enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
     )
-    assert variables is not None
-    assert np.allclose(variables, [0.25, 0.0, 0.75], atol=0.02)
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [0.25, 0.0, 0.75], atol=0.02
+    )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -145,13 +157,12 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
         lambda variables: variables[0] + variables[2],
     )
 
-    variables = (
-        BasicOptimizer(enopt_config, evaluator(test_functions))
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(enopt_config, evaluator(test_functions))
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [-0.1, 0.0, 0.4], atol=0.02
     )
-    assert variables is not None
-    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -165,13 +176,12 @@ def test_pymoo_le_ge_linear_constraints(
         "upper_bounds": [0.4],
     }
 
-    variables = (
-        BasicOptimizer(enopt_config, evaluator(), constraint_tolerance=1e-4)
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(enopt_config, evaluator(), constraint_tolerance=1e-4)
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [-0.05, 0.0, 0.45], atol=0.02
     )
-    assert variables is not None
-    assert np.allclose(variables, [-0.05, 0.0, 0.45], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -185,13 +195,12 @@ def test_pymoo_eq_linear_constraints(
         "upper_bounds": [1.0, 0.75],
     }
 
-    variables = (
-        BasicOptimizer(enopt_config, evaluator(), constraint_tolerance=1e-4)
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(enopt_config, evaluator(), constraint_tolerance=1e-4)
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [0.25, 0.0, 0.75], atol=0.02
     )
-    assert variables is not None
-    assert np.allclose(variables, [0.25, 0.0, 0.75], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -205,9 +214,12 @@ def test_pymoo_le_ge_linear_constraints_two_sided(
         "upper_bounds": [0.3, np.inf],
     }
 
-    variables = BasicOptimizer(enopt_config, evaluator()).run(initial_values).variables
-    assert variables is not None
-    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
+    optimizer = BasicOptimizer(enopt_config, evaluator())
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [-0.1, 0.0, 0.4], atol=0.02
+    )
 
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1]],
@@ -215,9 +227,12 @@ def test_pymoo_le_ge_linear_constraints_two_sided(
         "upper_bounds": [0.3],
     }
 
-    variables = BasicOptimizer(enopt_config, evaluator()).run(initial_values).variables
-    assert variables is not None
-    assert np.allclose(variables, [-0.1, 0.0, 0.4], atol=0.02)
+    optimizer = BasicOptimizer(enopt_config, evaluator())
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [-0.1, 0.0, 0.4], atol=0.02
+    )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -244,15 +259,14 @@ def test_pymoo_eq_mixed_constraints(
         *test_functions,
         lambda variables: variables[0] + variables[2],
     )
-    variables = (
-        BasicOptimizer(
-            enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
-        )
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(
+        enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
     )
-    assert variables is not None
-    assert np.allclose(variables, [0.25, 0.0, 0.75], atol=0.04)
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [0.25, 0.0, 0.75], atol=0.04
+    )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -280,15 +294,14 @@ def test_pymoo_constraint_handling(
         lambda variables: variables[0] + variables[2],
     )
 
-    variables = (
-        BasicOptimizer(
-            enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
-        )
-        .run(initial_values)
-        .variables
+    optimizer = BasicOptimizer(
+        enopt_config, evaluator(test_functions), constraint_tolerance=1e-4
     )
-    assert variables is not None
-    assert np.allclose(variables, [-0.05, 0.0, 0.45], atol=0.02)
+    optimizer.run(initial_values)
+    assert optimizer.results is not None
+    assert np.allclose(
+        optimizer.results.evaluations.variables, [-0.05, 0.0, 0.45], atol=0.02
+    )
 
 
 def test_pymoo_bound_constraints_with_failure(
@@ -300,13 +313,12 @@ def test_pymoo_bound_constraints_with_failure(
     enopt_config["optimizer"]["parallel"] = True
     enopt_config["optimizer"]["max_functions"] = 800
     enopt_config["realizations"] = {"realization_min_success": 0}
-    variables1 = (
-        BasicOptimizer(enopt_config, evaluator(test_functions))
-        .run(initial_values)
-        .variables
+    optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert np.allclose(
+        optimizer1.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
     )
-    assert variables1 is not None
-    assert np.allclose(variables1, [0.15, 0.0, 0.2], atol=0.02)
 
     counter = 0
 
@@ -318,14 +330,18 @@ def test_pymoo_bound_constraints_with_failure(
             return np.nan
         return test_functions[0](x)
 
-    variables2 = (
-        BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
-        .run(initial_values)
-        .variables
+    optimizer2 = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
+    optimizer2.run(initial_values)
+    assert optimizer2.results is not None
+    assert np.allclose(
+        optimizer2.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
     )
-    assert variables2 is not None
-    assert np.allclose(variables2, [0.15, 0.0, 0.2], atol=0.02)
-    assert not np.all(np.equal(variables1, variables2))
+    assert not np.all(
+        np.equal(
+            optimizer1.results.evaluations.variables,
+            optimizer2.results.evaluations.variables,
+        )
+    )
 
 
 def test_pymoo_bound_constraints_no_failure_handling(
@@ -337,13 +353,12 @@ def test_pymoo_bound_constraints_no_failure_handling(
     enopt_config["optimizer"]["parallel"] = True
     enopt_config["optimizer"]["max_functions"] = 800
 
-    variables1 = (
-        BasicOptimizer(enopt_config, evaluator(test_functions))
-        .run(initial_values)
-        .variables
+    optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert np.allclose(
+        optimizer1.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
     )
-    assert variables1 is not None
-    assert np.allclose(variables1, [0.15, 0.0, 0.2], atol=0.02)
 
     enopt_config["realizations"] = {"realization_min_success": 0}
 
@@ -357,12 +372,16 @@ def test_pymoo_bound_constraints_no_failure_handling(
             return np.nan
         return test_functions[0](x)
 
-    optimizer = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
-    optimizer.run(initial_values)
-    assert optimizer.exit_code == ExitCode.TOO_FEW_REALIZATIONS
-    variables2 = optimizer.variables
-    assert variables2 is not None
-    assert not np.all(np.equal(variables1, variables2))
+    optimizer2 = BasicOptimizer(enopt_config, evaluator((_add_nan, test_functions[1])))
+    exit_code = optimizer2.run(initial_values)
+    assert exit_code == ExitCode.TOO_FEW_REALIZATIONS
+    assert optimizer2.results is not None
+    assert not np.all(
+        np.equal(
+            optimizer1.results.evaluations.variables,
+            optimizer2.results.evaluations.variables,
+        )
+    )
 
 
 class ObjectiveScaler(ObjectiveTransform):
@@ -388,13 +407,15 @@ def test_pymoo_objective_with_scaler(
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
     enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
-    results1 = BasicOptimizer(enopt_config, evaluator()).run(initial_values).results
-    assert results1 is not None
-    assert results1.functions is not None
-    variables1 = results1.evaluations.variables
-    objectives1 = results1.functions.objectives
-    assert np.allclose(variables1, [0.0, 0.0, 0.5], atol=0.02)
-    assert np.allclose(objectives1, [0.5, 4.5], atol=0.02)
+    optimizer1 = BasicOptimizer(enopt_config, evaluator())
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert optimizer1.results.functions is not None
+    assert optimizer1.results is not None
+    assert np.allclose(
+        optimizer1.results.evaluations.variables, [0.0, 0.0, 0.5], atol=0.02
+    )
+    assert np.allclose(optimizer1.results.functions.objectives, [0.5, 4.5], atol=0.02)
 
     def function1(variables: NDArray[np.float64]) -> float:
         return float(test_functions[0](variables))
@@ -426,17 +447,26 @@ def test_pymoo_objective_with_scaler(
                 assert transformed.functions.objectives is not None
                 assert np.allclose(transformed.functions.objectives[-1], objective)
 
-    optimizer = BasicOptimizer(
+    optimizer2 = BasicOptimizer(
         enopt_config, evaluator([function1, function2]), transforms=transforms
     )
-    optimizer._observers.append(  # noqa: SLF001
+    optimizer2._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_value)
     )
-    results2 = optimizer.run(initial_values).results
-    assert results2 is not None
-    assert np.allclose(results2.evaluations.variables, variables1, atol=0.02)
-    assert results2.functions is not None
-    assert np.allclose(objectives1, results2.functions.objectives, atol=0.025)
+    optimizer2.run(initial_values)
+    assert optimizer2.results is not None
+    assert optimizer2.results is not None
+    assert np.allclose(
+        optimizer2.results.evaluations.variables,
+        optimizer1.results.evaluations.variables,
+        atol=0.02,
+    )
+    assert optimizer2.results.functions is not None
+    assert np.allclose(
+        optimizer1.results.functions.objectives,
+        optimizer2.results.functions.objectives,
+        atol=0.025,
+    )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -445,13 +475,15 @@ def test_pymoo_objective_with_lazy_scaler(
 ) -> None:
     enopt_config["optimizer"]["parallel"] = parallel
     enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
-    results1 = BasicOptimizer(enopt_config, evaluator()).run(initial_values).results
-    assert results1 is not None
-    assert results1.functions is not None
-    variables1 = results1.evaluations.variables
-    objectives1 = results1.functions.objectives
-    assert np.allclose(variables1, [0.0, 0.0, 0.5], atol=0.02)
-    assert np.allclose(objectives1, [0.5, 4.5], atol=0.02)
+    optimizer1 = BasicOptimizer(enopt_config, evaluator())
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert optimizer1.results.functions is not None
+    assert optimizer1.results is not None
+    assert np.allclose(
+        optimizer1.results.evaluations.variables, [0.0, 0.0, 0.5], atol=0.02
+    )
+    assert np.allclose(optimizer1.results.evaluations.objectives, [0.5, 4.5], atol=0.02)
 
     objective_transform = ObjectiveScaler(np.array([1.0, 1.0]))
     transforms = OptModelTransforms(objectives=objective_transform)
@@ -485,17 +517,26 @@ def test_pymoo_objective_with_lazy_scaler(
                     test_functions[1](item.evaluations.variables),
                 )
 
-    optimizer = BasicOptimizer(
+    optimizer2 = BasicOptimizer(
         enopt_config, evaluator([function1, function2]), transforms=transforms
     )
-    optimizer._observers.append(  # noqa: SLF001
+    optimizer2._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_value)
     )
-    results2 = optimizer.run(initial_values).results
-    assert results2 is not None
-    assert np.allclose(results2.evaluations.variables, variables1, atol=0.02)
-    assert results2.functions is not None
-    assert np.allclose(objectives1, results2.functions.objectives, atol=0.025)
+    optimizer2.run(initial_values)
+    assert optimizer2.results is not None
+    assert optimizer2.results is not None
+    assert np.allclose(
+        optimizer2.results.evaluations.variables,
+        optimizer1.results.evaluations.variables,
+        atol=0.02,
+    )
+    assert optimizer2.results.functions is not None
+    assert np.allclose(
+        optimizer1.results.evaluations.objectives,
+        optimizer2.results.functions.objectives,
+        atol=0.025,
+    )
 
 
 class ConstraintScaler(NonLinearConstraintTransform):
@@ -548,12 +589,11 @@ def test_pymoo_nonlinear_constraint_with_scaler(
         lambda variables: variables[0] + variables[2],
     )
 
-    results1 = (
-        BasicOptimizer(enopt_config, evaluator(functions)).run(initial_values).results
-    )
-    assert results1 is not None
-    assert results1.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
-    assert results1.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
+    optimizer1 = BasicOptimizer(enopt_config, evaluator(functions))
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert optimizer1.results.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
+    assert optimizer1.results.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
 
     scales = np.array(functions[-1](initial_values), ndmin=1)
     transforms = OptModelTransforms(nonlinear_constraints=ConstraintScaler(scales))
@@ -587,21 +627,28 @@ def test_pymoo_nonlinear_constraint_with_scaler(
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, constraints)
 
-    optimizer = BasicOptimizer(
+    optimizer2 = BasicOptimizer(
         enopt_config, evaluator(functions), transforms=transforms
     )
-    optimizer._observers.append(  # noqa: SLF001
+    optimizer2._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_constraints)
     )
-    results2 = optimizer.run(initial_values).results
-    assert results2 is not None
+    optimizer2.run(initial_values)
+    assert optimizer2.results is not None
+    assert optimizer2.results is not None
     assert np.allclose(
-        results2.evaluations.variables, results1.evaluations.variables, atol=0.02
+        optimizer2.results.evaluations.variables,
+        optimizer1.results.evaluations.variables,
+        atol=0.02,
     )
-    assert results1.functions is not None
-    assert results2.functions is not None
+    assert optimizer1.results is not None
+    assert optimizer2.results is not None
+    assert optimizer1.results.functions is not None
+    assert optimizer2.results.functions is not None
     assert np.allclose(
-        results1.functions.objectives, results2.functions.objectives, atol=0.025
+        optimizer1.results.functions.objectives,
+        optimizer2.results.functions.objectives,
+        atol=0.025,
     )
 
 
@@ -609,7 +656,7 @@ def test_pymoo_nonlinear_constraint_with_scaler(
 @pytest.mark.parametrize(
     "external", ["", pytest.param("external/", marks=pytest.mark.external)]
 )
-def test_pymoo_nonlinear_constraint_with_lazy_scaler(
+def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
     enopt_config: Any,
     evaluator: Any,
     parallel: bool,
@@ -628,12 +675,11 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
         lambda variables: variables[0] + variables[2],
     )
 
-    results1 = (
-        BasicOptimizer(enopt_config, evaluator(functions)).run(initial_values).results
-    )
-    assert results1 is not None
-    assert results1.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
-    assert results1.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
+    optimizer1 = BasicOptimizer(enopt_config, evaluator(functions))
+    optimizer1.run(initial_values)
+    assert optimizer1.results is not None
+    assert optimizer1.results.evaluations.variables[[0, 2]].sum() > 0.0 - 1e-5
+    assert optimizer1.results.evaluations.variables[[0, 2]].sum() < 0.4 + 1e-5
 
     scaler = ConstraintScaler([1.0])
     transforms = OptModelTransforms(nonlinear_constraints=scaler)
@@ -685,19 +731,25 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, value)
 
-    optimizer = BasicOptimizer(
+    optimizer2 = BasicOptimizer(
         enopt_config, evaluator(functions), transforms=transforms
     )
-    optimizer._observers.append(  # noqa: SLF001
+    optimizer2._observers.append(  # noqa: SLF001
         (EventType.FINISHED_EVALUATION, check_constraints)
     )
-    results2 = optimizer.run(initial_values).results
-    assert results2 is not None
+    optimizer2.run(initial_values)
+    assert optimizer2.results is not None
     assert np.allclose(
-        results2.evaluations.variables, results1.evaluations.variables, atol=0.02
+        optimizer2.results.evaluations.variables,
+        optimizer1.results.evaluations.variables,
+        atol=0.02,
     )
-    assert results1.functions is not None
-    assert results2.functions is not None
+    assert optimizer1.results is not None
+    assert optimizer2.results is not None
+    assert optimizer1.results.functions is not None
+    assert optimizer2.results.functions is not None
     assert np.allclose(
-        results1.functions.objectives, results2.functions.objectives, atol=0.025
+        optimizer1.results.functions.objectives,
+        optimizer2.results.functions.objectives,
+        atol=0.025,
     )
