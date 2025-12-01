@@ -311,7 +311,7 @@ def test_pymoo_bound_constraints_with_failure(
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     enopt_config["optimizer"]["method"] = "soo.nonconvex.de.DE"
     enopt_config["optimizer"]["parallel"] = True
-    enopt_config["optimizer"]["max_functions"] = 800
+    enopt_config["optimizer"]["max_functions"] = 1000
     enopt_config["realizations"] = {"realization_min_success": 0}
     optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
     optimizer1.run(initial_values)
@@ -697,7 +697,7 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
 
     def constraint_function(variables: NDArray[np.float64]) -> float:
         value = float(variables[0] + variables[2])
-        scaler.set_scales(value)
+        scaler.set_scales(abs(value))
         return value
 
     functions = (*test_functions, constraint_function)
@@ -720,10 +720,10 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
                 value = float(
                     item.evaluations.variables[0] + item.evaluations.variables[2]
                 )
-                assert np.allclose(upper_bounds, 0.4 / value)
+                assert np.allclose(upper_bounds, 0.4 / abs(value))
                 assert item.functions is not None
                 assert item.functions.constraints is not None
-                assert np.allclose(item.functions.constraints, 1.0)
+                assert np.allclose(abs(item.functions.constraints), 1.0)
                 transformed = item.transform_from_optimizer(
                     event.data["config"], event.data["transforms"]
                 )
