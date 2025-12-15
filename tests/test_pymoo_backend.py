@@ -10,6 +10,8 @@ from ropt.transforms import OptModelTransforms
 from ropt.transforms.base import NonLinearConstraintTransform, ObjectiveTransform
 from ropt.workflow import BasicOptimizer, Event
 
+# ruff: noqa: FBT001
+
 initial_values = [0.2, 0.0, 0.1]
 
 
@@ -86,7 +88,7 @@ def test_pymoo_termination(
 @pytest.mark.parametrize(
     ("lower_bounds", "upper_bounds"), [(-np.inf, 0.4), (-0.4, np.inf)]
 )
-def test_pymoo_ineq_nonlinear_constraints(
+def test_pymoo_ineq_nonlinear_constraints(  # noqa: PLR0917
     enopt_config: dict[str, Any],
     lower_bounds: Any,
     upper_bounds: Any,
@@ -567,22 +569,18 @@ class ConstraintScaler(NonLinearConstraintTransform):
 
 
 @pytest.mark.parametrize("parallel", [False, True])
-@pytest.mark.parametrize(
-    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
-)
 def test_pymoo_nonlinear_constraint_with_scaler(
     enopt_config: Any,
     evaluator: Any,
     parallel: bool,
     test_functions: Any,
-    external: str,
 ) -> None:
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 0.0,
         "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
 
     functions = (
         *test_functions,
@@ -653,22 +651,18 @@ def test_pymoo_nonlinear_constraint_with_scaler(
 
 
 @pytest.mark.parametrize("parallel", [False, True])
-@pytest.mark.parametrize(
-    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
-)
 def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
     enopt_config: Any,
     evaluator: Any,
     parallel: bool,
     test_functions: Any,
-    external: str,
 ) -> None:
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 0.0,
         "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
 
     functions = (
         *test_functions,

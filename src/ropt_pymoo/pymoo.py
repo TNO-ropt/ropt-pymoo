@@ -30,7 +30,7 @@ _NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 
 class _Problem(Problem):  # type: ignore[misc]
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         n_var: int,
         lower: NDArray[np.float64],
@@ -125,7 +125,7 @@ class PyMooOptimizer(Optimizer):
         See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
 
         # noqa
-        """
+        """  # noqa: DOC501
         self._config = config
         self._optimizer_callback = optimizer_callback
         options = (
@@ -325,7 +325,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
         See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
 
         # noqa
-        """
+        """  # noqa: DOC201
         return PyMooOptimizer(config, optimizer_callback)
 
     @classmethod
@@ -335,7 +335,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
         See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
 
         # noqa
-        """
+        """  # noqa: DOC201
         module_name, _, class_name = method.rpartition(".")
         if not module_name:
             return False
@@ -358,7 +358,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
         See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
 
         # noqa
-        """
+        """  # noqa: DOC501
         if options is not None:
             if method == "default":
                 msg = "The pymoo backend does not support a 'default' method"
