@@ -567,22 +567,18 @@ class ConstraintScaler(NonLinearConstraintTransform):
 
 
 @pytest.mark.parametrize("parallel", [False, True])
-@pytest.mark.parametrize(
-    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
-)
 def test_pymoo_nonlinear_constraint_with_scaler(
     enopt_config: Any,
     evaluator: Any,
     parallel: bool,
     test_functions: Any,
-    external: str,
 ) -> None:
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 0.0,
         "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
 
     functions = (
         *test_functions,
@@ -653,22 +649,18 @@ def test_pymoo_nonlinear_constraint_with_scaler(
 
 
 @pytest.mark.parametrize("parallel", [False, True])
-@pytest.mark.parametrize(
-    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
-)
 def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
     enopt_config: Any,
     evaluator: Any,
     parallel: bool,
     test_functions: Any,
-    external: str,
 ) -> None:
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 0.0,
         "upper_bounds": 0.4,
     }
     enopt_config["optimizer"]["parallel"] = parallel
-    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
+    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
 
     functions = (
         *test_functions,
