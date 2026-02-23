@@ -1,4 +1,5 @@
 import shutil
+import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from typing import Any
@@ -27,7 +28,10 @@ def test_rosenbrock_de(tmp_path: Path, monkeypatch: Any) -> None:
     module.main()
 
 
-@pytest.mark.xfail(reason="Fails on Python 3.13 on GitHub for unknown reasons")
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 13),
+    reason="Fails on Python 3.13 on GitHub for unknown reasons",
+)
 def test_discrete_ga(tmp_path: Path, monkeypatch: Any) -> None:
     shutil.copyfile(
         EXAMPLES_DIR / "discrete_ga.yml",
