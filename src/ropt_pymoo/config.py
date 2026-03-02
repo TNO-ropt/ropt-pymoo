@@ -183,11 +183,11 @@ class ParametersConfig(_ParametersBaseModel):
     def get_algorithm(self) -> Algorithm:
         """Parse the algorithm config and its parameters.
 
-        Raises:
-            ValueError: When the algorithm object is not found.
-
         Returns:
             A `pymoo` algorithm object.
+
+        Raises:
+            ValueError: When the algorithm object is not found.
         """
         parameters = _parse_parameters(self.parameters)
         algorithm = _get_class(
@@ -203,11 +203,11 @@ class ParametersConfig(_ParametersBaseModel):
     def get_termination(self) -> Termination | tuple[Any, ...]:
         """Parse the termination config.
 
-        Raises:
-            ValueError: When the termination object is not found.
-
         Returns:
             A `pymoo` termination object.
+
+        Raises:
+            ValueError: When the termination object is not found.
         """
         if isinstance(self.termination, tuple):
             return self.termination
@@ -231,11 +231,11 @@ class ParametersConfig(_ParametersBaseModel):
     def get_constraints(self) -> Any:  # noqa: ANN401
         """Parse the constraints config.
 
-        Raises:
-            ValueError: When the constraints object is not found.
-
         Returns:
             A `pymoo` constraints class.
+
+        Raises:
+            ValueError: When the constraints object is not found.
         """
         if self.constraints is None:
             return None
