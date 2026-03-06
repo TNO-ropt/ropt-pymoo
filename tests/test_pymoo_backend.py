@@ -7,11 +7,12 @@ import numpy as np
 import pytest
 from numpy.typing import ArrayLike, NDArray
 from ropt.config import EnOptConfig
-from ropt.enums import EventType, ExitCode
+from ropt.enums import EnOptEventType, ExitCode
+from ropt.events import EnOptEvent
 from ropt.results import FunctionResults
 from ropt.transforms import OptModelTransforms
 from ropt.transforms.base import NonLinearConstraintTransform, ObjectiveTransform
-from ropt.workflow import BasicOptimizer, Event
+from ropt.workflow import BasicOptimizer
 
 # ruff: noqa: FBT001
 
@@ -439,9 +440,9 @@ def test_pymoo_objective_with_scaler(
 
     checked = False
 
-    def check_value(event: Event) -> None:
+    def check_value(event: EnOptEvent) -> None:
         nonlocal checked
-        results = event.data.get("results", ())
+        results = event.results
         for item in results:
             if isinstance(item, FunctionResults) and not checked:
                 checked = True
@@ -449,9 +450,7 @@ def test_pymoo_objective_with_scaler(
                 assert item.functions.objectives is not None
                 objective = test_functions[1](item.evaluations.variables, 0)
                 assert np.allclose(item.functions.objectives[-1], objective / init1)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"], event.data["transforms"]
-                )
+                transformed = item.transform_from_optimizer(event.config)
                 assert transformed.functions is not None
                 assert transformed.functions.objectives is not None
                 assert np.allclose(transformed.functions.objectives[-1], objective)
@@ -460,7 +459,7 @@ def test_pymoo_objective_with_scaler(
         enopt_config, evaluator([function1, function2]), transforms=transforms
     )
     optimizer2._observers.append(  # noqa: SLF001
-        (EventType.FINISHED_EVALUATION, check_value)
+        (EnOptEventType.FINISHED_EVALUATION, check_value)
     )
     optimizer2.run(initial_values)
     assert optimizer2.results is not None
@@ -507,18 +506,16 @@ def test_pymoo_objective_with_lazy_scaler(
 
     checked = False
 
-    def check_value(event: Event) -> None:
+    def check_value(event: EnOptEvent) -> None:
         nonlocal checked
-        results = event.data.get("results", ())
+        results = event.results
         for item in results:
             if isinstance(item, FunctionResults) and not checked:
                 checked = True
                 assert item.functions is not None
                 assert item.functions.objectives is not None
                 assert np.allclose(item.functions.objectives[-1], 1.0)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"], event.data["transforms"]
-                )
+                transformed = item.transform_from_optimizer(event.config)
                 assert transformed.functions is not None
                 assert transformed.functions.objectives is not None
                 assert np.allclose(
@@ -530,7 +527,7 @@ def test_pymoo_objective_with_lazy_scaler(
         enopt_config, evaluator([function1, function2]), transforms=transforms
     )
     optimizer2._observers.append(  # noqa: SLF001
-        (EventType.FINISHED_EVALUATION, check_value)
+        (EnOptEventType.FINISHED_EVALUATION, check_value)
     )
     optimizer2.run(initial_values)
     assert optimizer2.results is not None
@@ -615,9 +612,9 @@ def test_pymoo_nonlinear_constraint_with_scaler(
 
     check = True
 
-    def check_constraints(event: Event) -> None:
+    def check_constraints(event: EnOptEvent) -> None:
         nonlocal check
-        results = event.data.get("results", ())
+        results = event.results
         for item in results:
             if isinstance(item, FunctionResults) and check:
                 check = False
@@ -625,9 +622,7 @@ def test_pymoo_nonlinear_constraint_with_scaler(
                 assert item.functions.constraints is not None
                 constraints = functions[-1](item.evaluations.variables, 0)
                 assert np.allclose(item.functions.constraints, constraints / scales)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"], event.data["transforms"]
-                )
+                transformed = item.transform_from_optimizer(event.config)
                 assert transformed.functions is not None
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, constraints)
@@ -636,7 +631,7 @@ def test_pymoo_nonlinear_constraint_with_scaler(
         enopt_config, evaluator(functions), transforms=transforms
     )
     optimizer2._observers.append(  # noqa: SLF001
-        (EventType.FINISHED_EVALUATION, check_constraints)
+        (EnOptEventType.FINISHED_EVALUATION, check_constraints)
     )
     optimizer2.run(initial_values)
     assert optimizer2.results is not None
@@ -705,10 +700,10 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
 
     check = True
 
-    def check_constraints(event: Event) -> None:
+    def check_constraints(event: EnOptEvent) -> None:
         nonlocal check
-        config = event.data["config"]
-        results = event.data.get("results", ())
+        config = event.config
+        results = event.results
         for item in results:
             if isinstance(item, FunctionResults) and check:
                 check = False
@@ -725,9 +720,7 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
                 assert item.functions is not None
                 assert item.functions.constraints is not None
                 assert np.allclose(abs(item.functions.constraints), 1.0)
-                transformed = item.transform_from_optimizer(
-                    event.data["config"], event.data["transforms"]
-                )
+                transformed = item.transform_from_optimizer(event.config)
                 assert transformed.functions is not None
                 assert transformed.functions.constraints is not None
                 assert np.allclose(transformed.functions.constraints, value)
@@ -736,7 +729,7 @@ def test_pymoo_nonlinear_constraint_with_lazy_scaler(  # noqa: PLR0915
         enopt_config, evaluator(functions), transforms=transforms
     )
     optimizer2._observers.append(  # noqa: SLF001
-        (EventType.FINISHED_EVALUATION, check_constraints)
+        (EnOptEventType.FINISHED_EVALUATION, check_constraints)
     )
     optimizer2.run(initial_values)
     assert optimizer2.results is not None

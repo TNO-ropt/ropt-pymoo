@@ -75,7 +75,7 @@ optimizer.run(initial_values)
 assert optimizer.results is not None
 assert optimizer.results.functions is not None
 print(f"  variables: {optimizer.results.evaluations.variables}")
-print(f"  objective: {optimizer.results.functions.weighted_objective}")
+print(f"  objective: {optimizer.results.functions.target_objective}")
 ```
 
 Running this will output the following:
