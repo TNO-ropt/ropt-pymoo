@@ -10,11 +10,9 @@ from typing import TYPE_CHECKING, Any, Final, TextIO
 import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from ropt.plugins.optimizer.base import Optimizer, OptimizerPlugin
-from ropt.plugins.optimizer.utils import (
-    NormalizedConstraints,
-    get_masked_linear_constraints,
-)
+from ropt.optimizer import Optimizer
+from ropt.optimizer.utils import NormalizedConstraints, get_masked_linear_constraints
+from ropt.plugins.optimizer import OptimizerPlugin
 
 from .config import ParametersConfig
 
@@ -122,7 +120,7 @@ class PyMooOptimizer(Optimizer):
     ) -> None:
         """Initialize the optimizer implemented by the pymoo plugin.
 
-        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
+        See the [ropt.optimizer.Optimizer][] abstract base class.
 
         # noqa
         """  # noqa: DOC501
@@ -151,7 +149,7 @@ class PyMooOptimizer(Optimizer):
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
 
-        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
+        See the [ropt.optimizer.Optimizer][] abstract base class.
 
         # noqa
         """
@@ -190,7 +188,7 @@ class PyMooOptimizer(Optimizer):
     def allow_nan(self) -> bool:
         """Whether NaN is allowed.
 
-        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
+        See the [ropt.optimizer.Optimizer][] abstract base class.
 
         # noqa
         """
@@ -200,7 +198,7 @@ class PyMooOptimizer(Optimizer):
     def is_parallel(self) -> bool:
         """Whether the current run is parallel.
 
-        See the [ropt.plugins.optimizer.base.Optimizer][] abstract base class.
+        See the [ropt.optimizer.Optimizer][] abstract base class.
 
         # noqa
         """
@@ -322,7 +320,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
     ) -> PyMooOptimizer:
         """Initialize the optimizer plugin.
 
-        See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
+        See the [ropt.plugins.optimizer.OptimizerPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC201
@@ -332,7 +330,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
     def is_supported(cls, method: str) -> bool:
         """Check if a method is supported.
 
-        See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
+        See the [ropt.plugins.optimizer.OptimizerPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC201
@@ -355,7 +353,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
     ) -> None:
         """Validate the options of a given method.
 
-        See the [ropt.plugins.optimizer.base.OptimizerPlugin][] abstract base class.
+        See the [ropt.plugins.optimizer.OptimizerPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC501
