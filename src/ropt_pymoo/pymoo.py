@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, Any, Final, TextIO
 import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from ropt.optimizer import Optimizer
-from ropt.optimizer.utils import NormalizedConstraints, get_masked_linear_constraints
-from ropt.plugins.optimizer import OptimizerPlugin
+from ropt.backend import Backend
+from ropt.backend.utils import NormalizedConstraints, get_masked_linear_constraints
+from ropt.plugins.backend import BackendPlugin
 
 from .config import ParametersConfig
 
@@ -97,20 +97,20 @@ class _Problem(Problem):  # type: ignore[misc]
             out["G"] = constraints[:, self._is_ieq]
 
 
-class PyMooOptimizer(Optimizer):
+class PyMooBackend(Backend):
     """Pymoo optimization backend for ropt.
 
     This class provides an interface to several optimization algorithms from
     [`pymoo`](https://pymoo.org/), enabling their use within `ropt`.
 
     To select an optimizer, set the `method` field within the
-    [`optimizer`][ropt.config.OptimizerConfig] section of the
+    [`optimizer`][ropt.config.BackendConfig] section of the
     [`EnOptConfig`][ropt.config.EnOptConfig] configuration object to the
     desired algorithm's name. The name should be a fully qualified class name
     within the `pymoo.algorithms` module (e.g., `soo.nonconvex.ga.GA`).
 
     For algorithm-specific options, use the `options` dictionary within the
-    [`optimizer`][ropt.config.OptimizerConfig] section, which will be
+    [`optimizer`][ropt.config.BackendConfig] section, which will be
     parsed into a [`ParametersConfig`][ropt_pymoo.config.ParametersConfig]
     object.
     """
@@ -120,18 +120,18 @@ class PyMooOptimizer(Optimizer):
     ) -> None:
         """Initialize the optimizer implemented by the pymoo plugin.
 
-        See the [ropt.optimizer.Optimizer][] abstract base class.
+        See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
         """  # noqa: DOC501
         self._config = config
         self._optimizer_callback = optimizer_callback
         options = (
-            copy.deepcopy(self._config.optimizer.options)
-            if isinstance(self._config.optimizer.options, dict)
+            copy.deepcopy(self._config.backend.options)
+            if isinstance(self._config.backend.options, dict)
             else {}
         )
-        _, _, method = self._config.optimizer.method.rpartition("/")
+        _, _, method = self._config.backend.method.rpartition("/")
         if method == "default":
             msg = "The pymoo backend does not support a 'default' method"
             raise ValueError(msg)
@@ -149,7 +149,7 @@ class PyMooOptimizer(Optimizer):
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
 
-        See the [ropt.optimizer.Optimizer][] abstract base class.
+        See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
         """
@@ -170,7 +170,7 @@ class PyMooOptimizer(Optimizer):
                 if self._normalized_constraints is not None
                 else None
             ),
-            parallel=self._config.optimizer.parallel,
+            parallel=self._config.backend.parallel,
         )
         if self._parameters.constraints is not None:
             constraints = self._parameters.get_constraints()
@@ -188,7 +188,7 @@ class PyMooOptimizer(Optimizer):
     def allow_nan(self) -> bool:
         """Whether NaN is allowed.
 
-        See the [ropt.optimizer.Optimizer][] abstract base class.
+        See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
         """
@@ -198,11 +198,11 @@ class PyMooOptimizer(Optimizer):
     def is_parallel(self) -> bool:
         """Whether the current run is parallel.
 
-        See the [ropt.optimizer.Optimizer][] abstract base class.
+        See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
         """
-        return self._config.optimizer.parallel
+        return self._config.backend.parallel
 
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._config.variables.lower_bounds[self._config.variables.mask]
@@ -311,26 +311,26 @@ class PyMooOptimizer(Optimizer):
         return self._cached_function
 
 
-class PyMooOptimizerPlugin(OptimizerPlugin):
+class PyMooBackendPlugin(BackendPlugin):
     """Pymoo optimizer plugin class."""
 
     @classmethod
     def create(
         cls, config: EnOptConfig, optimizer_callback: OptimizerCallback
-    ) -> PyMooOptimizer:
+    ) -> PyMooBackend:
         """Initialize the optimizer plugin.
 
-        See the [ropt.plugins.optimizer.OptimizerPlugin][] abstract base class.
+        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC201
-        return PyMooOptimizer(config, optimizer_callback)
+        return PyMooBackend(config, optimizer_callback)
 
     @classmethod
     def is_supported(cls, method: str) -> bool:
         """Check if a method is supported.
 
-        See the [ropt.plugins.optimizer.OptimizerPlugin][] abstract base class.
+        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC201
@@ -353,7 +353,7 @@ class PyMooOptimizerPlugin(OptimizerPlugin):
     ) -> None:
         """Validate the options of a given method.
 
-        See the [ropt.plugins.optimizer.OptimizerPlugin][] abstract base class.
+        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC501

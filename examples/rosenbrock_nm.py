@@ -16,7 +16,7 @@ CONFIG: dict[str, Any] = {
         "lower_bounds": [0.0, 0.0],
         "upper_bounds": [2.0, 2.0],
     },
-    "optimizer": {
+    "backend": {
         "method": "soo.nonconvex.nelder.NelderMead",
         "options": {
             "termination": ("n_iter", 30),

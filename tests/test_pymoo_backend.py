@@ -21,7 +21,7 @@ def enopt_config_fixture() -> dict[str, Any]:
             "lower_bounds": [-1.0, -1.0, -1.0],
             "upper_bounds": [1.0, 1.0, 1.0],
         },
-        "optimizer": {
+        "backend": {
             "method": "soo.nonconvex.nelder.NelderMead",
         },
         "objectives": {
@@ -37,10 +37,10 @@ def enopt_config_fixture() -> dict[str, Any]:
 def test_pymoo_bound_constraints(
     enopt_config: dict[str, Any], evaluator: Any, parallel: bool, external: str
 ) -> None:
-    enopt_config["optimizer"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
+    enopt_config["backend"]["method"] = f"{external}soo.nonconvex.nelder.NelderMead"
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     optimizer = BasicOptimizer(enopt_config, evaluator())
     optimizer.run(initial_values)
     assert optimizer.results is not None
@@ -55,9 +55,9 @@ def test_pymoo_termination(
 ) -> None:
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
 
-    enopt_config["optimizer"]["options"] = {
+    enopt_config["backend"]["options"] = {
         "termination": {"name": "default.DefaultSingleObjectiveTermination"}
     }
     optimizer1 = BasicOptimizer(enopt_config, evaluator())
@@ -67,7 +67,7 @@ def test_pymoo_termination(
         optimizer1.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
     )
 
-    enopt_config["optimizer"]["options"] = {"termination": {"name": "soo"}}
+    enopt_config["backend"]["options"] = {"termination": {"name": "soo"}}
     optimizer2 = BasicOptimizer(enopt_config, evaluator())
     optimizer2.run(initial_values)
     assert optimizer2.results is not None
@@ -94,7 +94,7 @@ def test_pymoo_ineq_nonlinear_constraints(  # noqa: PLR0917
     parallel: bool,
     test_functions: Any,
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": lower_bounds,
         "upper_bounds": upper_bounds,
@@ -120,7 +120,7 @@ def test_pymoo_eq_nonlinear_constraints(
     parallel: bool,
     test_functions: Any,
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": 1.0,
         "upper_bounds": 1.0,
@@ -147,7 +147,7 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
     evaluator: Any,
     test_functions: Any,
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": [0.0],
         "upper_bounds": [0.3],
@@ -169,7 +169,7 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
 def test_pymoo_le_ge_linear_constraints(
     enopt_config: dict[str, Any], evaluator: Any, parallel: bool
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1]],
         "lower_bounds": [-np.inf],
@@ -188,7 +188,7 @@ def test_pymoo_le_ge_linear_constraints(
 def test_pymoo_eq_linear_constraints(
     enopt_config: dict[str, Any], evaluator: Any, parallel: bool
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1], [0, 1, 1]],
         "lower_bounds": [1.0, 0.75],
@@ -207,7 +207,7 @@ def test_pymoo_eq_linear_constraints(
 def test_pymoo_le_ge_linear_constraints_two_sided(
     enopt_config: Any, evaluator: Any, parallel: bool
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["linear_constraints"] = {
         "coefficients": [[1, 0, 1], [1, 0, 1]],
         "lower_bounds": [-np.inf, 0.0],
@@ -242,7 +242,7 @@ def test_pymoo_eq_mixed_constraints(
     parallel: bool,
     test_functions: Any,
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["variables"]["lower_bounds"] = [-1.0, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 1.0]
     enopt_config["nonlinear_constraints"] = {
@@ -280,12 +280,12 @@ def test_pymoo_constraint_handling(
     parallel: bool,
     test_functions: Any,
 ) -> None:
-    enopt_config["optimizer"]["parallel"] = parallel
+    enopt_config["backend"]["parallel"] = parallel
     enopt_config["nonlinear_constraints"] = {
         "lower_bounds": -np.inf,
         "upper_bounds": 0.4,
     }
-    enopt_config["optimizer"]["options"] = {
+    enopt_config["backend"]["options"] = {
         "termination": {"name": "default.DefaultSingleObjectiveTermination"},
         "constraints": {
             "name": "as_penalty.ConstraintsAsPenalty",
@@ -313,9 +313,9 @@ def test_pymoo_bound_constraints_with_failure(
 ) -> None:
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    enopt_config["optimizer"]["method"] = "soo.nonconvex.de.DE"
-    enopt_config["optimizer"]["parallel"] = True
-    enopt_config["optimizer"]["max_functions"] = 1000
+    enopt_config["backend"]["method"] = "soo.nonconvex.de.DE"
+    enopt_config["backend"]["parallel"] = True
+    enopt_config["backend"]["max_functions"] = 1000
     enopt_config["realizations"] = {"realization_min_success": 0}
     optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
     optimizer1.run(initial_values)
@@ -353,9 +353,9 @@ def test_pymoo_bound_constraints_no_failure_handling(
 ) -> None:
     enopt_config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    enopt_config["optimizer"]["method"] = "soo.nonconvex.nelder.NelderMead"
-    enopt_config["optimizer"]["parallel"] = True
-    enopt_config["optimizer"]["max_functions"] = 800
+    enopt_config["backend"]["method"] = "soo.nonconvex.nelder.NelderMead"
+    enopt_config["backend"]["parallel"] = True
+    enopt_config["backend"]["max_functions"] = 800
 
     optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
     optimizer1.run(initial_values)

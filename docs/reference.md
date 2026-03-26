@@ -1,4 +1,4 @@
-::: ropt_pymoo.pymoo.PyMooOptimizer
+::: ropt_pymoo.pymoo.PyMooBackend
     options:
         members: False
 

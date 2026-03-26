@@ -52,7 +52,7 @@ CONFIG: dict[str, Any] = {
         "lower_bounds": [0.0, 0.0],
         "upper_bounds": [10.0, 10.0],
     },
-    "optimizer": {
+    "backend": {
         "method": "soo.nonconvex.ga.GA",
         "options": options,
     },

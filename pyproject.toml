@@ -26,8 +26,8 @@ dependencies = ["numpy", "pymoo", "pydantic"]
 "Repository" = "https://github.com/TNO-ropt/ropt-pymoo"
 "Bug Tracker" = "https://github.com/TNO-ropt/ropt-pymoo/issues"
 
-[project.entry-points."ropt.plugins.optimizer"]
-pymoo = "ropt_pymoo.pymoo:PyMooOptimizerPlugin"
+[project.entry-points."ropt.plugins.backend"]
+pymoo = "ropt_pymoo.pymoo:PyMooBackendPlugin"
 
 [tool.setuptools.packages.find]
 where = ["src"]
