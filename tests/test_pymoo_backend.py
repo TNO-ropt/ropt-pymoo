@@ -315,7 +315,7 @@ def test_pymoo_bound_constraints_with_failure(
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     enopt_config["backend"]["method"] = "soo.nonconvex.de.DE"
     enopt_config["backend"]["parallel"] = True
-    enopt_config["backend"]["max_functions"] = 1000
+    enopt_config["optimizer"] = {"max_functions": 1000}
     enopt_config["realizations"] = {"realization_min_success": 0}
     optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
     optimizer1.run(initial_values)
@@ -355,7 +355,7 @@ def test_pymoo_bound_constraints_no_failure_handling(
     enopt_config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     enopt_config["backend"]["method"] = "soo.nonconvex.nelder.NelderMead"
     enopt_config["backend"]["parallel"] = True
-    enopt_config["backend"]["max_functions"] = 800
+    enopt_config["optimizer"] = {"max_functions": 800}
 
     optimizer1 = BasicOptimizer(enopt_config, evaluator(test_functions))
     optimizer1.run(initial_values)
