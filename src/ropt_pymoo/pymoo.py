@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import NDArray
-    from ropt.config import EnOptConfig
+    from ropt.context import EnOptContext
     from ropt.core import OptimizerCallback
 
 # These algorithms do not allow NaN function values:
@@ -105,7 +105,7 @@ class PyMooBackend(Backend):
 
     To select an optimizer, set the `method` field within the
     [`optimizer`][ropt.config.BackendConfig] section of the
-    [`EnOptConfig`][ropt.config.EnOptConfig] configuration object to the
+    [`EnOptContext`][ropt.context.EnOptContext] configuration object to the
     desired algorithm's name. The name should be a fully qualified class name
     within the `pymoo.algorithms` module (e.g., `soo.nonconvex.ga.GA`).
 
@@ -116,7 +116,7 @@ class PyMooBackend(Backend):
     """
 
     def __init__(
-        self, config: EnOptConfig, optimizer_callback: OptimizerCallback
+        self, context: EnOptContext, optimizer_callback: OptimizerCallback
     ) -> None:
         """Initialize the optimizer implemented by the pymoo plugin.
 
@@ -124,14 +124,14 @@ class PyMooBackend(Backend):
 
         # noqa
         """  # noqa: DOC501
-        self._config = config
+        self._context = context
         self._optimizer_callback = optimizer_callback
         options = (
-            copy.deepcopy(self._config.backend.options)
-            if isinstance(self._config.backend.options, dict)
+            copy.deepcopy(self._context.backend.options)
+            if isinstance(self._context.backend.options, dict)
             else {}
         )
-        _, _, method = self._config.backend.method.rpartition("/")
+        _, _, method = self._context.backend.method.rpartition("/")
         if method == "default":
             msg = "The pymoo backend does not support a 'default' method"
             raise ValueError(msg)
@@ -160,7 +160,7 @@ class PyMooBackend(Backend):
         self._bounds = self._get_bounds()
 
         problem = _Problem(
-            n_var=initial_values[self._config.variables.mask].size,
+            n_var=initial_values[self._context.variables.mask].size,
             lower=self._bounds[0],
             upper=self._bounds[1],
             function=self._calculate_objective,
@@ -170,7 +170,7 @@ class PyMooBackend(Backend):
                 if self._normalized_constraints is not None
                 else None
             ),
-            parallel=self._config.backend.parallel,
+            parallel=self._context.backend.parallel,
         )
         if self._parameters.constraints is not None:
             constraints = self._parameters.get_constraints()
@@ -202,11 +202,15 @@ class PyMooBackend(Backend):
 
         # noqa
         """
-        return self._config.backend.parallel
+        return self._context.backend.parallel
 
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-        lower_bounds = self._config.variables.lower_bounds[self._config.variables.mask]
-        upper_bounds = self._config.variables.upper_bounds[self._config.variables.mask]
+        lower_bounds = self._context.variables.lower_bounds[
+            self._context.variables.mask
+        ]
+        upper_bounds = self._context.variables.upper_bounds[
+            self._context.variables.mask
+        ]
         return lower_bounds, upper_bounds
 
     def _get_constraint_bounds(
@@ -229,17 +233,17 @@ class PyMooBackend(Backend):
         self._linear_constraint_bounds: (
             tuple[NDArray[np.float64], NDArray[np.float64]] | None
         ) = None
-        if self._config.linear_constraints is not None:
+        if self._context.linear_constraints is not None:
             self._lin_coef, lin_lower, lin_upper = get_masked_linear_constraints(
-                self._config, initial_values
+                self._context, initial_values
             )
             self._linear_constraint_bounds = (lin_lower, lin_upper)
         nonlinear_bounds = (
             None
-            if self._config.nonlinear_constraints is None
+            if self._context.nonlinear_constraints is None
             else (
-                self._config.nonlinear_constraints.lower_bounds,
-                self._config.nonlinear_constraints.upper_bounds,
+                self._context.nonlinear_constraints.lower_bounds,
+                self._context.nonlinear_constraints.upper_bounds,
             )
         )
         if (bounds := self._get_constraint_bounds(nonlinear_bounds)) is not None:
@@ -263,7 +267,7 @@ class PyMooBackend(Backend):
             return np.array([])
         if self._normalized_constraints.constraints is None:
             constraints = []
-            if self._config.nonlinear_constraints is not None:
+            if self._context.nonlinear_constraints is not None:
                 functions = self._get_functions(variables)
                 constraints.append(
                     (
@@ -316,7 +320,7 @@ class PyMooBackendPlugin(BackendPlugin):
 
     @classmethod
     def create(
-        cls, config: EnOptConfig, optimizer_callback: OptimizerCallback
+        cls, context: EnOptContext, optimizer_callback: OptimizerCallback
     ) -> PyMooBackend:
         """Initialize the optimizer plugin.
 
@@ -324,7 +328,7 @@ class PyMooBackendPlugin(BackendPlugin):
 
         # noqa
         """  # noqa: DOC201
-        return PyMooBackend(config, optimizer_callback)
+        return PyMooBackend(context, optimizer_callback)
 
     @classmethod
     def is_supported(cls, method: str) -> bool:
