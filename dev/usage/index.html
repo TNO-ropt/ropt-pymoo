@@ -506,8 +506,8 @@ run. However, there are a few things to consider:</p>
     <code>pymoo</code> algorithms typically don't support user-defined gradients. Any
     gradient calculation settings in <code>ropt</code> will be ignored.</li>
 <li><strong>Ignored <code>ropt</code> Parameters:</strong> Some standard <code>ropt</code> optimization parameters
-    like <code>max_iterations</code> and <code>tolerance</code> are not used by this plugin and will
-    have no effect.</li>
+    like <code>max_iterations</code> and <code>convergence_tolerance</code> are not used by this
+    plugin and will have no effect.</li>
 <li><strong>Initial Values:</strong> <code>pymoo</code> generally ignores initial variable values.
     However, you still need to provide an initial value vector in <code>ropt</code> simply
     to define the number of variables; a zero vector is sufficient for this
