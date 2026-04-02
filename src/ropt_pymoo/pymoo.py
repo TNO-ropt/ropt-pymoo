@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import NDArray
+    from ropt.config import BackendConfig
     from ropt.context import EnOptContext
     from ropt.core import OptimizerCallback
 
@@ -115,7 +116,23 @@ class PyMooBackend(Backend):
     object.
     """
 
-    def __init__(
+    def __init__(self, backend_config: BackendConfig) -> None:
+        """Initialize the Pymoo optimizer backend.
+
+        Args:
+            backend_config: The configuration for the backend, containing the
+                            method name and options.
+
+        Raises:
+            ValueError: If the method is "default".
+        """
+        self._config = backend_config
+        _, _, method = self._config.method.rpartition("/")
+        if method == "default":
+            msg = "The pymoo backend does not support a 'default' method"
+            raise ValueError(msg)
+
+    def init(
         self, context: EnOptContext, optimizer_callback: OptimizerCallback
     ) -> None:
         """Initialize the optimizer implemented by the pymoo plugin.
@@ -123,23 +140,21 @@ class PyMooBackend(Backend):
         See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
-        """  # noqa: DOC501
+        """
         self._context = context
         self._optimizer_callback = optimizer_callback
         options = (
-            copy.deepcopy(self._context.backend.options)
-            if isinstance(self._context.backend.options, dict)
+            copy.deepcopy(self._config.options)
+            if isinstance(self._config.options, dict)
             else {}
         )
-        _, _, method = self._context.backend.method.rpartition("/")
-        if method == "default":
-            msg = "The pymoo backend does not support a 'default' method"
-            raise ValueError(msg)
         self._cached_variables: NDArray[np.float64] | None = None
         self._cached_function: NDArray[np.float64] | None = None
         self._stdout: TextIO
 
-        self._parameters = ParametersConfig.model_validate(options, context=method)
+        self._parameters = ParametersConfig.model_validate(
+            options, context=self._config.method
+        )
 
         self._allow_nan = True
         for algorithm in _NO_FAILURE_HANDLING:
@@ -170,7 +185,7 @@ class PyMooBackend(Backend):
                 if self._normalized_constraints is not None
                 else None
             ),
-            parallel=self._context.backend.parallel,
+            parallel=self._config.parallel,
         )
         if self._parameters.constraints is not None:
             constraints = self._parameters.get_constraints()
@@ -202,7 +217,7 @@ class PyMooBackend(Backend):
 
         # noqa
         """
-        return self._context.backend.parallel
+        return self._config.parallel
 
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._context.variables.lower_bounds[
@@ -319,16 +334,14 @@ class PyMooBackendPlugin(BackendPlugin):
     """Pymoo optimizer plugin class."""
 
     @classmethod
-    def create(
-        cls, context: EnOptContext, optimizer_callback: OptimizerCallback
-    ) -> PyMooBackend:
+    def create(cls, backend_config: BackendConfig) -> PyMooBackend:
         """Initialize the optimizer plugin.
 
         See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
         """  # noqa: DOC201
-        return PyMooBackend(context, optimizer_callback)
+        return PyMooBackend(backend_config)
 
     @classmethod
     def is_supported(cls, method: str) -> bool:
