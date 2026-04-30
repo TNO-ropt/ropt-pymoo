@@ -219,6 +219,23 @@ class PyMooBackend(Backend):
         """
         return self._config.parallel
 
+    def validate_options(self) -> None:
+        """Validate the options of a given method.
+
+        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
+
+        # noqa
+        """  # noqa: DOC501
+        if self._config.options is not None:
+            _, _, method = self._config.method.rpartition("/")
+            if method == "default":
+                msg = "The pymoo backend does not support a 'default' method"
+                raise ValueError(msg)
+            if not isinstance(self._config.options, dict):
+                msg = "Pymoo optimizer options must be a dictionary"
+                raise ValueError(msg)
+            ParametersConfig.model_validate(self._config.options, context=method)
+
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         lower_bounds = self._context.variables.lower_bounds[
             self._context.variables.mask
@@ -363,23 +380,3 @@ class PyMooBackendPlugin(BackendPlugin):
             if class_.__name__ == class_name:
                 return True
         return False
-
-    @classmethod
-    def validate_options(
-        cls, method: str, options: dict[str, Any] | list[str] | None
-    ) -> None:
-        """Validate the options of a given method.
-
-        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
-
-        # noqa
-        """  # noqa: DOC501
-        if options is not None:
-            if method == "default":
-                msg = "The pymoo backend does not support a 'default' method"
-                raise ValueError(msg)
-            if not isinstance(options, dict):
-                msg = "Pymoo optimizer options must be a dictionary"
-                raise ValueError(msg)
-            _, _, method = method.rpartition("/")
-            ParametersConfig.model_validate(options, context=method)
