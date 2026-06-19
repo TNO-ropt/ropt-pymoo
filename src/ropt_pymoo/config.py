@@ -173,7 +173,7 @@ class ParametersConfig(_ParametersBaseModel):
 
     @property
     def algorithm(self) -> str:
-        """Get the algorithm name.
+        """The algorithm name.
 
         Returns:
             The fully qualified algorithm class name.
