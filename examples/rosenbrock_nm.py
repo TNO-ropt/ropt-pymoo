@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from ropt.evaluator import EvaluatorContext, EvaluatorResult
+from ropt.evaluation import EvaluationBatchContext, EvaluationBatchResult
 from ropt.results import FunctionResults, Results
 from ropt.workflow import BasicOptimizer
 
@@ -25,7 +25,7 @@ CONFIG: dict[str, Any] = {
 }
 
 
-def rosenbrock(variables: NDArray[np.float64], _: EvaluatorContext) -> EvaluatorResult:
+def rosenbrock(variables: NDArray[np.float64], _: EvaluationBatchContext) -> EvaluationBatchResult:
     """Evaluate the function.
 
     Args:
@@ -38,7 +38,7 @@ def rosenbrock(variables: NDArray[np.float64], _: EvaluatorContext) -> Evaluator
     for idx in range(variables.shape[0]):
         x, y = variables[idx, :]
         objectives[idx, 0] = (1.0 - x) ** 2 + 100 * (y - x * x) ** 2
-    return EvaluatorResult(objectives=objectives)
+    return EvaluationBatchResult(objectives=objectives)
 
 
 def report(results: tuple[Results, ...]) -> None:
