@@ -101,11 +101,11 @@ def test_pymoo_ineq_nonlinear_constraints(  # noqa: PLR0917
     }
 
     weight = 1.0 if upper_bounds == 0.4 else -1.0
-    test_functions = (
-        *test_functions,
-        lambda variables, _: weight * variables[0] + weight * variables[2],
-    )
-    optimizer = BasicOptimizer(config, evaluator(test_functions))
+
+    def constraint_function(variables: Any, _: Any) -> float:
+        return weight * float(variables[0] + variables[2])
+
+    optimizer = BasicOptimizer(config, evaluator(test_functions, [constraint_function]))
     optimizer.run(initial_values)
     assert optimizer.results is not None
     assert np.allclose(
@@ -126,12 +126,13 @@ def test_pymoo_eq_nonlinear_constraints(
         "upper_bounds": 1.0,
     }
 
-    test_functions = (
-        *test_functions,
-        lambda variables, _: variables[0] + variables[2],
-    )
+    def constraint_function(variables: Any, _: Any) -> float:
+        return float(variables[0] + variables[2])
+
     optimizer = BasicOptimizer(
-        config, evaluator(test_functions), constraint_tolerance=1e-4
+        config,
+        evaluator(test_functions, [constraint_function]),
+        constraint_tolerance=1e-4,
     )
     optimizer.run(initial_values)
     assert optimizer.results is not None
@@ -152,12 +153,11 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
         "lower_bounds": [0.0],
         "upper_bounds": [0.3],
     }
-    test_functions = (
-        *test_functions,
-        lambda variables, _: variables[0] + variables[2],
-    )
 
-    optimizer = BasicOptimizer(config, evaluator(test_functions))
+    def constraint_function(variables: Any, _: Any) -> float:
+        return float(variables[0] + variables[2])
+
+    optimizer = BasicOptimizer(config, evaluator(test_functions, [constraint_function]))
     optimizer.run(initial_values)
     assert optimizer.results is not None
     assert np.allclose(
@@ -255,12 +255,13 @@ def test_pymoo_eq_mixed_constraints(
         "upper_bounds": [0.75],
     }
 
-    test_functions = (
-        *test_functions,
-        lambda variables, _: variables[0] + variables[2],
-    )
+    def constraint_function(variables: Any, _: Any) -> float:
+        return float(variables[0] + variables[2])
+
     optimizer = BasicOptimizer(
-        config, evaluator(test_functions), constraint_tolerance=1e-4
+        config,
+        evaluator(test_functions, [constraint_function]),
+        constraint_tolerance=1e-4,
     )
     optimizer.run(initial_values)
     assert optimizer.results is not None
@@ -293,13 +294,13 @@ def test_pymoo_constraint_handling(
         },
     }
 
-    test_functions = (
-        *test_functions,
-        lambda variables, _: variables[0] + variables[2],
-    )
+    def constraint_function(variables: Any, _: Any) -> float:
+        return float(variables[0] + variables[2])
 
     optimizer = BasicOptimizer(
-        config, evaluator(test_functions), constraint_tolerance=1e-4
+        config,
+        evaluator(test_functions, [constraint_function]),
+        constraint_tolerance=1e-4,
     )
     optimizer.run(initial_values)
     assert optimizer.results is not None
