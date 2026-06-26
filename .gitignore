@@ -1,4 +1,3 @@
 **/__pycache__/**
 src/**egg-info/**
 src/ropt_pymoo/version.py
-uv.lock
