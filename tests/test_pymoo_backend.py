@@ -5,7 +5,6 @@ from typing import Any
 
 import numpy as np
 import pytest
-from ropt.enums import ExitCode
 from ropt.workflow import BasicOptimizer
 
 # ruff: noqa: FBT001
@@ -341,46 +340,6 @@ def test_pymoo_bound_constraints_with_failure(
     assert np.allclose(
         optimizer2.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
     )
-    assert not np.all(
-        np.equal(
-            optimizer1.results.evaluations.variables,
-            optimizer2.results.evaluations.variables,
-        )
-    )
-
-
-def test_pymoo_bound_constraints_no_failure_handling(
-    config: dict[str, Any], evaluator: Any, test_functions: Any
-) -> None:
-    config["variables"]["lower_bounds"] = [0.15, -1.0, -1.0]
-    config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
-    config["backend"]["method"] = "soo.nonconvex.nelder.NelderMead"
-    config["backend"]["parallel"] = True
-    config["optimizer"] = {"max_functions": 800}
-
-    optimizer1 = BasicOptimizer(config, evaluator(test_functions))
-    optimizer1.run(initial_values)
-    assert optimizer1.results is not None
-    assert np.allclose(
-        optimizer1.results.evaluations.variables, [0.15, 0.0, 0.2], atol=0.02
-    )
-
-    config["realizations"] = {"realization_min_success": 0}
-
-    counter = 0
-
-    def _add_nan(x: Any, _: int) -> Any:
-        nonlocal counter
-        counter += 1
-        if counter == 2:
-            counter = 0
-            return np.nan
-        return test_functions[0](x, 0)
-
-    optimizer2 = BasicOptimizer(config, evaluator((_add_nan, test_functions[1])))
-    exit_code = optimizer2.run(initial_values)
-    assert exit_code == ExitCode.TOO_FEW_REALIZATIONS
-    assert optimizer2.results is not None
     assert not np.all(
         np.equal(
             optimizer1.results.evaluations.variables,

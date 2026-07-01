@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import importlib
 import inspect
-from typing import TYPE_CHECKING, Any, Final, TextIO
+from typing import TYPE_CHECKING, Any, TextIO
 
 import numpy as np
 from pymoo.core.problem import Problem
@@ -23,9 +23,6 @@ if TYPE_CHECKING:
     from ropt.config import BackendConfig
     from ropt.context import EnOptContext
     from ropt.core import OptimizerCallback
-
-# These algorithms do not allow NaN function values:
-_NO_FAILURE_HANDLING: Final = {"NelderMead"}
 
 
 class _Problem(Problem):  # type: ignore[misc]
@@ -156,11 +153,6 @@ class PyMooBackend(Backend):
             options, context=self._config.method
         )
 
-        self._allow_nan = True
-        for algorithm in _NO_FAILURE_HANDLING:
-            if algorithm in self._parameters.algorithm:
-                self._allow_nan = False
-
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
 
@@ -198,16 +190,6 @@ class PyMooBackend(Backend):
             seed=self._parameters.seed,
             verbose=True,
         )
-
-    @property
-    def allow_nan(self) -> bool:
-        """Whether NaN is allowed.
-
-        See the [ropt.backend.Backend][] abstract base class.
-
-        # noqa
-        """
-        return self._allow_nan
 
     @property
     def is_parallel(self) -> bool:
@@ -341,8 +323,6 @@ class PyMooBackend(Backend):
                 assert bounds is not None
                 self._normalized_constraints.set_bounds(*bounds)
             assert function is not None
-            if self._allow_nan:
-                function = np.where(np.isnan(function), np.inf, function)
             self._cached_function = function.copy()
         return self._cached_function
 
