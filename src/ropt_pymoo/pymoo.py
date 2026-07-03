@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import importlib
 import inspect
+import logging
 from typing import TYPE_CHECKING, Any, TextIO
 
 import numpy as np
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
     from ropt.config import BackendConfig
     from ropt.context import EnOptContext
     from ropt.core import OptimizerCallback
+
+_logger = logging.getLogger("ropt.backend.pymoo")
 
 
 class _Problem(Problem):  # type: ignore[misc]
@@ -152,6 +155,8 @@ class PyMooBackend(Backend):
         self._parameters = ParametersConfig.model_validate(
             options, context=self._config.method
         )
+        _, _, method = self._config.method.rpartition("/")
+        _logger.debug("Using PyMoo algorithm: %s", method)
 
     def start(self, initial_values: NDArray[np.float64]) -> None:
         """Start the optimization.
