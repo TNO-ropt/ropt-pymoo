@@ -7,9 +7,13 @@ import inspect
 from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
-from pymoo.core.algorithm import Algorithm  # noqa: TC002
-from pymoo.core.operator import Operator  # noqa: TC002
-from pymoo.core.termination import Termination  # noqa: TC002
+from pymoo.core.algorithm import (
+    Algorithm,  # ruff: ignore[typing-only-third-party-import]
+)
+from pymoo.core.operator import Operator  # ruff: ignore[typing-only-third-party-import]
+from pymoo.core.termination import (
+    Termination,  # ruff: ignore[typing-only-third-party-import]
+)
 from pymoo.termination import get_termination
 
 if TYPE_CHECKING:
@@ -228,7 +232,7 @@ class ParametersConfig(_ParametersBaseModel):
             raise ValueError(msg)
         return termination_class(**self.termination.parameters)
 
-    def get_constraints(self) -> Any:  # noqa: ANN401
+    def get_constraints(self) -> Any:  # ruff: ignore[any-type]
         """Parse the constraints config.
 
         Returns:
