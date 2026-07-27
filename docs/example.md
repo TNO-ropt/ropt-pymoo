@@ -63,7 +63,9 @@ CONFIG: dict[str, Any] = {
 }
 
 
-def function(variables: NDArray[np.float64], _: EvaluationBatchContext) -> EvaluationBatchResult:
+def function(
+    variables: NDArray[np.float64], _: EvaluationBatchContext
+) -> EvaluationBatchResult:
     x, y = variables[0, :]
     objectives = np.array(-min(3 * x, y), ndmin=2, dtype=np.float64)
     constraints = np.array(x + y - 10, ndmin=2, dtype=np.float64)

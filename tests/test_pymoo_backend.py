@@ -1,4 +1,4 @@
-# ruff: noqa: RUF069
+# ruff: file-ignore[float-equality-comparison]
 
 import sys
 from typing import Any
@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from ropt.workflow import BasicOptimizer
 
-# ruff: noqa: FBT001
+# ruff: file-ignore[boolean-type-hint-positional-argument]
 
 initial_values = [0.2, 0.0, 0.1]
 
@@ -85,7 +85,7 @@ def test_pymoo_termination(
 @pytest.mark.parametrize(
     ("lower_bounds", "upper_bounds"), [(-np.inf, 0.4), (-0.4, np.inf)]
 )
-def test_pymoo_ineq_nonlinear_constraints(  # noqa: PLR0917
+def test_pymoo_ineq_nonlinear_constraints(  # ruff: ignore[too-many-positional-arguments]
     config: dict[str, Any],
     lower_bounds: Any,
     upper_bounds: Any,

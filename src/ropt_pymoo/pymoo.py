@@ -29,7 +29,7 @@ _logger = logging.getLogger("ropt.backend.pymoo")
 
 
 class _Problem(Problem):  # type: ignore[misc]
-    def __init__(  # noqa: PLR0913, PLR0917
+    def __init__(  # ruff: ignore[too-many-arguments, too-many-positional-arguments]
         self,
         n_var: int,
         lower: NDArray[np.float64],
@@ -75,8 +75,8 @@ class _Problem(Problem):  # type: ignore[misc]
         self,
         variables: NDArray[np.float64],
         out: dict[str, Any],
-        *_0: Any,  # noqa: ANN401
-        **_1: Any,  # noqa: ANN401
+        *_0: Any,  # ruff: ignore[any-type]
+        **_1: Any,  # ruff: ignore[any-type]
     ) -> None:
         variables = variables.astype(np.float64)
         if self._parallel:
@@ -212,7 +212,7 @@ class PyMooBackend(Backend):
         See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
-        """  # noqa: DOC501
+        """  # ruff: ignore[docstring-missing-exception]
         if self._config.options is not None:
             _, _, method = self._config.method.rpartition("/")
             if method == "default":
@@ -342,7 +342,7 @@ class PyMooBackendPlugin(BackendPlugin):
         See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
-        """  # noqa: DOC201
+        """  # ruff: ignore[docstring-missing-returns]
         return PyMooBackend(backend_config)
 
     @classmethod
@@ -352,7 +352,7 @@ class PyMooBackendPlugin(BackendPlugin):
         See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
 
         # noqa
-        """  # noqa: DOC201
+        """  # ruff: ignore[docstring-missing-returns]
         module_name, _, class_name = method.rpartition(".")
         if not module_name:
             return False
