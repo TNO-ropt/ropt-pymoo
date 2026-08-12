@@ -4,9 +4,11 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from ropt.evaluation import EvaluationBatchContext, EvaluationBatchResult
-from ropt.results import FunctionResults, Results
-from ropt.workflow import BasicOptimizer
+from ropt.components.evaluators import (
+    EvaluationFunctionContext,
+    EvaluationFunctionResult,
+)
+from ropt.simple import EvaluateResult, optimize
 
 options = {
     "parameters": {
@@ -64,8 +66,8 @@ CONFIG: dict[str, Any] = {
 
 
 def function(
-    variables: NDArray[np.float64], _: EvaluationBatchContext
-) -> EvaluationBatchResult:
+    variables: NDArray[np.float64], _: EvaluationFunctionContext
+) -> EvaluationFunctionResult:
     """Evaluate the function.
 
     Args:
@@ -74,33 +76,30 @@ def function(
     Returns:
         Calculated objectives and constraints.
     """
-    x, y = variables[0, :]
-    objectives = np.array(-min(3 * x, y), ndmin=2, dtype=np.float64)
-    constraints = np.array(x + y - 10, ndmin=2, dtype=np.float64)
-    return EvaluationBatchResult(objectives=objectives, constraints=constraints)
+    x, y = variables
+    objectives = np.array([-min(3 * x, y)], dtype=np.float64)
+    constraints = np.array([x + y - 10], dtype=np.float64)
+    return EvaluationFunctionResult(objectives=objectives, constraints=constraints)
 
 
-def report(results: tuple[Results, ...]) -> None:
+def report(result: EvaluateResult) -> None:
     """Report results of an evaluation.
 
     Args:
-        results: The results.
+        result: The result.
     """
-    for item in results:
-        if isinstance(item, FunctionResults) and item.functions is not None:
-            print(f"  variables: {item.evaluations.variables}")
-            print(f"  objective: {item.functions.target_objective}\n")
+    if result.results.functions is not None:
+        print(f"  variables: {result.results.evaluations.variables}")
+        print(f"  objective: {result.target_objective}\n")
 
 
 def run_optimization(config: dict[str, Any]) -> None:
     """Run the optimization."""
-    optimizer = BasicOptimizer(config, function)
-    optimizer.set_results_callback(report)
-    optimizer.run(initial_values)
-    assert optimizer.results is not None
-    assert optimizer.results.functions is not None
-    print(f"  variables: {optimizer.results.evaluations.variables}")
-    print(f"  objective: {optimizer.results.functions.target_objective}\n")
+    result = optimize(config, initial_values, function, report=report)
+    assert result.variables is not None
+    assert result.target_objective is not None
+    print(f"  variables: {result.variables}")
+    print(f"  objective: {result.target_objective}\n")
 
 
 def main() -> None:

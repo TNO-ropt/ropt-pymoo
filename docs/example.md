@@ -5,8 +5,11 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from ropt.evaluation import EvaluationBatchContext, EvaluationBatchResult
-from ropt.workflow import BasicOptimizer
+from ropt.components.evaluators import (
+    EvaluationFunctionContext,
+    EvaluationFunctionResult,
+)
+from ropt.simple import optimize
 
 options = {
     "parameters": {
@@ -64,20 +67,19 @@ CONFIG: dict[str, Any] = {
 
 
 def function(
-    variables: NDArray[np.float64], _: EvaluationBatchContext
-) -> EvaluationBatchResult:
-    x, y = variables[0, :]
-    objectives = np.array(-min(3 * x, y), ndmin=2, dtype=np.float64)
-    constraints = np.array(x + y - 10, ndmin=2, dtype=np.float64)
-    return EvaluationBatchResult(objectives=objectives, constraints=constraints)
+    variables: NDArray[np.float64], _: EvaluationFunctionContext
+) -> EvaluationFunctionResult:
+    x, y = variables
+    objectives = np.array([-min(3 * x, y)], dtype=np.float64)
+    constraints = np.array([x + y - 10], dtype=np.float64)
+    return EvaluationFunctionResult(objectives=objectives, constraints=constraints)
 
 
-optimizer = BasicOptimizer(CONFIG, function)
-optimizer.run(initial_values)
-assert optimizer.results is not None
-assert optimizer.results.functions is not None
-print(f"  variables: {optimizer.results.evaluations.variables}")
-print(f"  objective: {optimizer.results.functions.target_objective}")
+result = optimize(CONFIG, initial_values, function)
+assert result.variables is not None
+assert result.target_objective is not None
+print(f"  variables: {result.variables}")
+print(f"  objective: {result.target_objective}")
 ```
 
 Running this will output the following:
