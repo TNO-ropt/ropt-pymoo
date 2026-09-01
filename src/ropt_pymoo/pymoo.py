@@ -71,6 +71,20 @@ class _Problem(Problem):  # type: ignore[misc]
         self._parallel = parallel
         self._n_constraints = n_eq_constr + n_ieq_constr
 
+    def __deepcopy__(self, memo: dict[int, Any]) -> _Problem:
+        # Pymoo deep-copies the problem, for instance when wrapping it in a meta
+        # problem. The callbacks are bound to the live optimizer, which owns
+        # locks and other uncopyable state, so they are shared instead of copied.
+        copied = self.__class__.__new__(self.__class__)
+        memo[id(self)] = copied
+        for key, value in self.__dict__.items():
+            copied.__dict__[key] = (
+                value
+                if key in {"_function", "_constraints"}
+                else copy.deepcopy(value, memo)
+            )
+        return copied
+
     def _evaluate(
         self,
         variables: NDArray[np.float64],
