@@ -152,10 +152,8 @@ class PyMooBackend(Backend):
         self._cached_function: NDArray[np.float64] | None = None
         self._stdout: TextIO
 
-        self._parameters = ParametersConfig.model_validate(
-            options, context=self._config.method
-        )
         _, _, method = self._config.method.rpartition("/")
+        self._parameters = ParametersConfig.model_validate(options, context=method)
         _logger.debug("Using PyMoo algorithm: %s", method)
 
     def start(self, initial_values: NDArray[np.float64]) -> None:
@@ -215,9 +213,6 @@ class PyMooBackend(Backend):
         """  # ruff: ignore[docstring-missing-exception]
         if self._config.options is not None:
             _, _, method = self._config.method.rpartition("/")
-            if method == "default":
-                msg = "The pymoo backend does not support a 'default' method"
-                raise ValueError(msg)
             if not isinstance(self._config.options, dict):
                 msg = "Pymoo optimizer options must be a dictionary"
                 raise ValueError(msg)
