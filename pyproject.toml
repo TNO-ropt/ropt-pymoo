@@ -28,7 +28,7 @@ dependencies = ["numpy", "pymoo", "pydantic"]
 "Documentation" = "https://tno-ropt.github.io/ropt-pymoo"
 
 [project.entry-points."ropt.plugins.backend"]
-pymoo = "ropt_pymoo.pymoo:PyMooBackendPlugin"
+pymoo = "ropt_pymoo.pymoo:PyMooBackend"
 
 [tool.setuptools.packages.find]
 where = ["src"]

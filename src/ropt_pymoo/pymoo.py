@@ -6,14 +6,13 @@ import copy
 import importlib
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, Any, ClassVar, TextIO
 
 import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.backend import Backend
 from ropt.backend.utils import NormalizedConstraints, get_masked_linear_constraints
-from ropt.plugins.backend import BackendPlugin
 
 from .config import ParametersConfig
 
@@ -24,6 +23,7 @@ if TYPE_CHECKING:
     from ropt.config import BackendConfig
     from ropt.context import EnOptContext
     from ropt.core import OptimizerCallback
+    from ropt.plugins import MethodSpec
 
 _logger = logging.getLogger("ropt.backend.pymoo")
 
@@ -112,6 +112,34 @@ class _Problem(Problem):  # type: ignore[misc]
             out["G"] = constraints[:, self._is_ieq]
 
 
+def _algorithm_exists(method: str) -> bool:
+    """Report whether `method` names a pymoo algorithm class.
+
+    A predicate rather than a set: the algorithms available are whatever the
+    installed `pymoo` provides, which cannot be enumerated in advance. The name
+    is `module.path.ClassName` and is matched against the class name exactly,
+    so its casing is significant and must not be folded.
+
+    Args:
+        method: The method name, without the `pymoo/` prefix.
+
+    Returns:
+        Whether the installed pymoo provides a class of that name.
+    """
+    module_name, _, class_name = method.rpartition(".")
+    if not module_name:
+        return False
+    full_module_name = f"pymoo.algorithms.{module_name}"
+    try:
+        module = importlib.import_module(full_module_name)
+    except ImportError:
+        return False
+    return any(
+        class_.__name__ == class_name
+        for _, class_ in inspect.getmembers(module, inspect.isclass)
+    )
+
+
 class PyMooBackend(Backend):
     """Pymoo optimization backend for ropt.
 
@@ -129,6 +157,8 @@ class PyMooBackend(Backend):
     parsed into a [`ParametersConfig`][ropt_pymoo.config.ParametersConfig]
     object.
     """
+
+    methods: ClassVar[MethodSpec] = staticmethod(_algorithm_exists)
 
     def __init__(self, backend_config: BackendConfig) -> None:
         """Initialize the Pymoo optimizer backend.
@@ -221,7 +251,7 @@ class PyMooBackend(Backend):
     def validate_options(self) -> None:
         """Validate the options of a given method.
 
-        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
+        See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
         """  # ruff: ignore[docstring-missing-exception]
@@ -340,38 +370,3 @@ class PyMooBackend(Backend):
             assert function is not None
             self._cached_function = function.copy()
         return self._cached_function
-
-
-class PyMooBackendPlugin(BackendPlugin):
-    """Pymoo optimizer plugin class."""
-
-    @classmethod
-    def create(cls, backend_config: BackendConfig) -> PyMooBackend:
-        """Initialize the optimizer plugin.
-
-        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
-
-        # noqa
-        """  # ruff: ignore[docstring-missing-returns]
-        return PyMooBackend(backend_config)
-
-    @classmethod
-    def is_supported(cls, method: str) -> bool:
-        """Check if a method is supported.
-
-        See the [ropt.plugins.backend.BackendPlugin][] abstract base class.
-
-        # noqa
-        """  # ruff: ignore[docstring-missing-returns]
-        module_name, _, class_name = method.rpartition(".")
-        if not module_name:
-            return False
-        full_module_name = f"pymoo.algorithms.{module_name}"
-        try:
-            module = importlib.import_module(full_module_name)
-        except ImportError:
-            return False
-        for _, class_ in inspect.getmembers(module, inspect.isclass):
-            if class_.__name__ == class_name:
-                return True
-        return False
