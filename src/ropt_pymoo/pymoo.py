@@ -146,6 +146,12 @@ class PyMooBackend(Backend):
     This class provides an interface to several optimization algorithms from
     [`pymoo`](https://pymoo.org/), enabling their use within `ropt`.
 
+    !!! note "Optimizer output goes to the process's standard output"
+        `pymoo` is asked to report its progress, and it can only be told whether
+        to report, not where to write. Its output therefore goes to the
+        process's standard output, where optimizations running at the same time
+        cannot keep theirs apart.
+
     To select an optimizer, set the `method` field within the
     [`optimizer`][ropt.config.BackendConfig] section of the
     [`EnOptContext`][ropt.context.EnOptContext] configuration object to the
