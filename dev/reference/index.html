@@ -604,6 +604,13 @@
         <p>Pymoo optimization backend for ropt.</p>
 <p>This class provides an interface to several optimization algorithms from
 <a href="https://pymoo.org/"><code>pymoo</code></a>, enabling their use within <code>ropt</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Optimizer output goes to the process's standard output</p>
+<p><code>pymoo</code> is asked to report its progress, and it can only be told whether
+to report, not where to write. Its output therefore goes to the
+process's standard output, where optimizations running at the same time
+cannot keep theirs apart.</p>
+</div>
 <p>To select an optimizer, set the <code>method</code> field within the
 <a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/config/#ropt.config.BackendConfig"><code>optimizer</code></a> section of the
 <a class="autorefs autorefs-external" href="https://tno-ropt.github.io/ropt/latest/reference/context/#ropt.context.EnOptContext"><code>EnOptContext</code></a> configuration object to the
