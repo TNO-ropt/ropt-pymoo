@@ -13,9 +13,10 @@ from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.backend import Backend
 from ropt.backend.utils import (
-    NormalizedConstraints,
-    get_masked_linear_constraints,
+    get_linear_constraints,
+    get_nonlinear_equalities,
     resolve_verbosity,
+    split_linear_constraints,
 )
 
 from .config import ParametersConfig
@@ -40,23 +41,23 @@ class _Problem(Problem):  # type: ignore[misc]
         upper: NDArray[np.float64],
         function: Callable[[NDArray[np.float64]], NDArray[np.float64]],
         constraints: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-        is_eq: list[bool] | None,
+        is_eq: NDArray[np.bool_] | None,
         *,
         parallel: bool = True,
     ) -> None:
         self._function = function
         self._constraints = constraints
-        self._is_eq: list[bool] | None = None
-        self._is_ieq: list[bool] | None = None
+        self._is_eq: NDArray[np.bool_] | None = None
+        self._is_ieq: NDArray[np.bool_] | None = None
 
         n_eq_constr = 0
         n_ieq_constr = 0
 
         if is_eq is not None:
             self._is_eq = is_eq
-            self._is_ieq = [not item for item in self._is_eq]
-            n_eq_constr = sum(self._is_eq)
-            n_ieq_constr = sum(self._is_ieq)
+            self._is_ieq = ~is_eq
+            n_eq_constr = int(np.sum(self._is_eq))
+            n_ieq_constr = int(np.sum(self._is_ieq))
 
         if n_eq_constr == 0:
             self._is_eq = None
@@ -224,7 +225,7 @@ class PyMooBackend(Backend):
         self._cached_variables = None
         self._cached_function = None
 
-        self._normalized_constraints = self._init_constraints(initial_values)
+        self._is_eq = self._init_constraints(initial_values)
         self._bounds = self._get_bounds()
 
         problem = _Problem(
@@ -233,11 +234,7 @@ class PyMooBackend(Backend):
             upper=self._bounds[1],
             function=self._calculate_objective,
             constraints=self._calculate_constraints,
-            is_eq=(
-                self._normalized_constraints.is_eq
-                if self._normalized_constraints is not None
-                else None
-            ),
+            is_eq=self._is_eq,
             parallel=self._config.parallel,
         )
         if self._parameters.constraints is not None:
@@ -285,45 +282,23 @@ class PyMooBackend(Backend):
         ]
         return lower_bounds, upper_bounds
 
-    def _get_constraint_bounds(
-        self, nonlinear_bounds: tuple[NDArray[np.float64], NDArray[np.float64]] | None
-    ) -> tuple[NDArray[np.float64], NDArray[np.float64]] | None:
-        bounds = []
-        if nonlinear_bounds is not None:
-            bounds.append(nonlinear_bounds)
-        if self._linear_constraint_bounds is not None:
-            bounds.append(self._linear_constraint_bounds)
-        if bounds:
-            lower_bounds, upper_bounds = zip(*bounds, strict=True)
-            return np.concatenate(lower_bounds), np.concatenate(upper_bounds)
-        return None
-
     def _init_constraints(
         self, initial_values: NDArray[np.float64]
-    ) -> NormalizedConstraints | None:
-        self._lin_coef: NDArray[np.float64] | None = None
-        self._linear_constraint_bounds: (
-            tuple[NDArray[np.float64], NDArray[np.float64]] | None
-        ) = None
+    ) -> NDArray[np.bool_] | None:
+        is_eq = get_nonlinear_equalities(self._context)
+        self._nonlinear_constraint_count = 0 if is_eq is None else int(is_eq.size)
+        self._linear_coefficients: NDArray[np.float64] | None = None
+        self._linear_offsets: NDArray[np.float64] | None = None
         if self._context.linear_constraints is not None:
-            self._lin_coef, lin_lower, lin_upper = get_masked_linear_constraints(
-                self._context, initial_values
+            coefficients, offsets, linear_is_eq = split_linear_constraints(
+                *get_linear_constraints(self._context, initial_values)
             )
-            self._linear_constraint_bounds = (lin_lower, lin_upper)
-        nonlinear_bounds = (
-            None
-            if self._context.nonlinear_constraints is None
-            else (
-                self._context.nonlinear_constraints.lower_bounds,
-                self._context.nonlinear_constraints.upper_bounds,
+            self._linear_coefficients = coefficients
+            self._linear_offsets = offsets
+            is_eq = (
+                linear_is_eq if is_eq is None else np.concatenate((is_eq, linear_is_eq))
             )
-        )
-        bounds = self._get_constraint_bounds(nonlinear_bounds)
-        if bounds is not None:
-            normalized_constraints = NormalizedConstraints(flip=True)
-            normalized_constraints.set_bounds(*bounds)
-            return normalized_constraints
-        return None
+        return None if is_eq is None or is_eq.size == 0 else is_eq
 
     def _calculate_objective(
         self, variables: NDArray[np.float64]
@@ -336,25 +311,22 @@ class PyMooBackend(Backend):
     def _calculate_constraints(
         self, variables: NDArray[np.float64]
     ) -> NDArray[np.float64]:
-        if self._normalized_constraints is None:
+        if self._is_eq is None:
             return np.array([])
-        if self._normalized_constraints.constraints is None:
-            constraints = []
-            if self._context.nonlinear_constraints is not None:
-                functions = self._get_functions(variables)
-                constraints.append(
-                    (
-                        functions[1:] if variables.ndim == 1 else functions[:, 1:]
-                    ).transpose()
-                )
-            if self._lin_coef is not None:
-                constraints.append(np.matmul(self._lin_coef, variables.transpose()))
-            if constraints:
-                self._normalized_constraints.set_constraints(
-                    np.concatenate(constraints, axis=0)
-                )
-        assert self._normalized_constraints.constraints is not None
-        return self._normalized_constraints.constraints.transpose()
+        blocks = []
+        if self._nonlinear_constraint_count:
+            functions = self._get_functions(variables)
+            values = functions[1:] if variables.ndim == 1 else functions[:, 1:]
+            blocks.append(np.atleast_2d(values).T if variables.ndim == 1 else values.T)
+        if self._linear_coefficients is not None:
+            assert self._linear_offsets is not None
+            points = variables if variables.ndim > 1 else np.expand_dims(variables, 0)
+            blocks.append(
+                np.matmul(self._linear_coefficients, points.T)
+                - self._linear_offsets[:, np.newaxis]
+            )
+        # Pymoo treats a constraint as satisfied when it is non-positive.
+        return -np.concatenate(blocks, axis=0).transpose()
 
     def _get_functions(self, variables: NDArray[np.float64]) -> NDArray[np.float64]:
         if (
@@ -364,8 +336,6 @@ class PyMooBackend(Backend):
         ):
             self._cached_variables = None
             self._cached_function = None
-            if self._normalized_constraints is not None:
-                self._normalized_constraints.reset()
         if self._cached_function is None:
             self._cached_variables = variables.copy()
             callback_result = self._optimizer_callback(
@@ -374,13 +344,6 @@ class PyMooBackend(Backend):
                 return_gradients=False,
             )
             function = callback_result.functions
-            # The optimizer callback may change non-linear constraint bounds:
-            if self._normalized_constraints is not None:
-                bounds = self._get_constraint_bounds(
-                    callback_result.nonlinear_constraint_bounds
-                )
-                assert bounds is not None
-                self._normalized_constraints.set_bounds(*bounds)
             assert function is not None
             self._cached_function = function.copy()
         return self._cached_function
