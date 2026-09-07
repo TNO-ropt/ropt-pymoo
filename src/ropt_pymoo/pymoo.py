@@ -12,7 +12,11 @@ import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.backend import Backend
-from ropt.backend.utils import NormalizedConstraints, get_masked_linear_constraints
+from ropt.backend.utils import (
+    NormalizedConstraints,
+    get_masked_linear_constraints,
+    resolve_verbosity,
+)
 
 from .config import ParametersConfig
 
@@ -112,6 +116,11 @@ class _Problem(Problem):  # type: ignore[misc]
             out["G"] = constraints[:, self._is_ieq]
 
 
+def _reports(*, verbose: bool | int | None) -> bool:
+    level = resolve_verbosity(verbose=verbose)
+    return level is None or level > 0
+
+
 def _algorithm_exists(method: str) -> bool:
     """Report whether `method` names a pymoo algorithm class.
 
@@ -146,11 +155,10 @@ class PyMooBackend(Backend):
     This class provides an interface to several optimization algorithms from
     [`pymoo`](https://pymoo.org/), enabling their use within `ropt`.
 
-    !!! note "Optimizer output goes to the process's standard output"
-        `pymoo` is asked to report its progress, and it can only be told whether
-        to report, not where to write. Its output therefore goes to the
-        process's standard output, where optimizations running at the same time
-        cannot keep theirs apart.
+    !!! note "Optimizer output"
+        `pymoo` reports its progress when the `verbose` setting of
+        [`BackendConfig`][ropt.config.BackendConfig] asks for it. `pymoo` has no
+        reporting levels, so the setting is on or off.
 
     To select an optimizer, set the `method` field within the
     [`optimizer`][ropt.config.BackendConfig] section of the
@@ -241,7 +249,7 @@ class PyMooBackend(Backend):
             self._parameters.get_algorithm(),
             termination=self._parameters.get_termination(),
             seed=self._parameters.seed,
-            verbose=True,
+            verbose=_reports(verbose=self._config.verbose),
         )
 
     @property
