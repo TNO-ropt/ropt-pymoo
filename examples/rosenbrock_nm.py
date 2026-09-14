@@ -44,7 +44,7 @@ def report(result: EvaluateResult) -> None:
         result: The result.
     """
     if result.results.functions is not None:
-        print(f"  variables: {result.results.evaluations.variables}")
+        print(f"  variables: {result.results.variables}")
         print(f"  objective: {result.target_objective}\n")
 
 
