@@ -6,15 +6,13 @@ import copy
 import importlib
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, TextIO
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TextIO
 
 import numpy as np
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 from ropt.backend import Backend
 from ropt.backend.utils import (
-    get_linear_constraints,
-    get_nonlinear_equalities,
     resolve_verbosity,
     split_linear_constraints,
 )
@@ -23,10 +21,11 @@ from .config import ParametersConfig
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from numpy.typing import NDArray
+    from ropt.backend import OptimizationProblem
     from ropt.config import BackendConfig
-    from ropt.context import EnOptContext
     from ropt.core import OptimizerCallback
     from ropt.plugins import MethodSpec
 
@@ -191,16 +190,21 @@ class PyMooBackend(Backend):
             msg = "The pymoo backend does not support a 'default' method"
             raise ValueError(msg)
 
-    def init(
-        self, context: EnOptContext, optimizer_callback: OptimizerCallback
+    def start(
+        self,
+        problem: OptimizationProblem,
+        optimizer_callback: OptimizerCallback,
+        *,
+        evaluation_policy: Literal["speculative", "separate", "auto"],  # ruff: ignore[unused-method-argument]
+        output_dir: Path | None,  # ruff: ignore[unused-method-argument]
     ) -> None:
-        """Initialize the optimizer implemented by the pymoo plugin.
+        """Start the optimization.
 
         See the [ropt.backend.Backend][] abstract base class.
 
         # noqa
         """
-        self._context = context
+        self._problem = problem
         self._optimizer_callback = optimizer_callback
         options = (
             copy.deepcopy(self._config.options)
@@ -215,21 +219,11 @@ class PyMooBackend(Backend):
         self._parameters = ParametersConfig.model_validate(options, context=method)
         _logger.debug("Using PyMoo algorithm: %s", method)
 
-    def start(self, initial_values: NDArray[np.float64]) -> None:
-        """Start the optimization.
-
-        See the [ropt.backend.Backend][] abstract base class.
-
-        # noqa
-        """
-        self._cached_variables = None
-        self._cached_function = None
-
-        self._is_eq = self._init_constraints(initial_values)
+        self._is_eq = self._init_constraints()
         self._bounds = self._get_bounds()
 
-        problem = _Problem(
-            n_var=initial_values[self._context.variables.mask].size,
+        pymoo_problem = _Problem(
+            n_var=problem.variable_count,
             lower=self._bounds[0],
             upper=self._bounds[1],
             function=self._calculate_objective,
@@ -239,25 +233,17 @@ class PyMooBackend(Backend):
         )
         if self._parameters.constraints is not None:
             constraints = self._parameters.get_constraints()
-            problem = constraints(problem, **self._parameters.constraints.parameters)
+            pymoo_problem = constraints(
+                pymoo_problem, **self._parameters.constraints.parameters
+            )
 
         minimize(
-            problem,
+            pymoo_problem,
             self._parameters.get_algorithm(),
             termination=self._parameters.get_termination(),
             seed=self._parameters.seed,
             verbose=_reports(verbose=self._config.verbose),
         )
-
-    @property
-    def is_parallel(self) -> bool:
-        """Whether the current run is parallel.
-
-        See the [ropt.backend.Backend][] abstract base class.
-
-        # noqa
-        """
-        return self._config.parallel
 
     def validate_options(self) -> None:
         """Validate the options of a given method.
@@ -274,25 +260,16 @@ class PyMooBackend(Backend):
             ParametersConfig.model_validate(self._config.options, context=method)
 
     def _get_bounds(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-        lower_bounds = self._context.variables.lower_bounds[
-            self._context.variables.mask
-        ]
-        upper_bounds = self._context.variables.upper_bounds[
-            self._context.variables.mask
-        ]
-        return lower_bounds, upper_bounds
+        return self._problem.lower_bounds, self._problem.upper_bounds
 
-    def _init_constraints(
-        self, initial_values: NDArray[np.float64]
-    ) -> NDArray[np.bool_] | None:
-        is_eq = get_nonlinear_equalities(self._context)
+    def _init_constraints(self) -> NDArray[np.bool_] | None:
+        is_eq = self._problem.nonlinear_equalities
         self._nonlinear_constraint_count = 0 if is_eq is None else int(is_eq.size)
         self._linear_coefficients: NDArray[np.float64] | None = None
         self._linear_offsets: NDArray[np.float64] | None = None
-        if self._context.linear_constraints is not None:
-            coefficients, offsets, linear_is_eq = split_linear_constraints(
-                *get_linear_constraints(self._context, initial_values)
-            )
+        linear = self._problem.linear_constraints
+        if linear is not None:
+            coefficients, offsets, linear_is_eq = split_linear_constraints(*linear)
             self._linear_coefficients = coefficients
             self._linear_offsets = offsets
             is_eq = (
