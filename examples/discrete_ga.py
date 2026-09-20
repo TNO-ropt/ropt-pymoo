@@ -8,7 +8,8 @@ from ropt.components.evaluators import (
     EvaluationFunctionContext,
     EvaluationFunctionResult,
 )
-from ropt.simple import EvaluateResult, optimize
+from ropt.results import FunctionResults
+from ropt.simple import optimize
 
 options = {
     "parameters": {
@@ -82,24 +83,24 @@ def function(
     return EvaluationFunctionResult(objectives=objectives, constraints=constraints)
 
 
-def report(result: EvaluateResult) -> None:
+def report(result: FunctionResults) -> None:
     """Report results of an evaluation.
 
     Args:
         result: The result.
     """
-    if result.results.functions is not None:
-        print(f"  variables: {result.results.variables}")
+    if result.functions is not None:
+        print(f"  variables: {result.variables}")
         print(f"  objective: {result.target_objective}\n")
 
 
 def run_optimization(config: dict[str, Any]) -> None:
     """Run the optimization."""
     result = optimize(config, initial_values, function, report=report)
-    assert result.variables is not None
-    assert result.target_objective is not None
-    print(f"  variables: {result.variables}")
-    print(f"  objective: {result.target_objective}\n")
+    assert result.results is not None
+    assert result.results.target_objective is not None
+    print(f"  variables: {result.results.variables}")
+    print(f"  objective: {result.results.target_objective}\n")
 
 
 def main() -> None:

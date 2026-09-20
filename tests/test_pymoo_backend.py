@@ -41,8 +41,8 @@ def test_pymoo_bound_constraints(
     config["variables"]["upper_bounds"] = [1.0, 1.0, 0.2]
     config["backend"]["parallel"] = parallel
     result = optimize(config, initial_values, eval_func())
-    assert result.variables is not None
-    assert np.allclose(result.variables, [0.15, 0.0, 0.2], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [0.15, 0.0, 0.2], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -57,16 +57,16 @@ def test_pymoo_termination(
         "termination": {"name": "default.DefaultSingleObjectiveTermination"}
     }
     result1 = optimize(config, initial_values, eval_func())
-    assert result1.variables is not None
-    assert np.allclose(result1.variables, [0.15, 0.0, 0.2], atol=0.02)
+    assert result1.results is not None
+    assert np.allclose(result1.results.variables, [0.15, 0.0, 0.2], atol=0.02)
 
     config["backend"]["options"] = {"termination": {"name": "soo"}}
     result2 = optimize(config, initial_values, eval_func())
-    assert result2.variables is not None
-    assert np.allclose(result2.variables, [0.15, 0.0, 0.2], atol=0.02)
+    assert result2.results is not None
+    assert np.allclose(result2.results.variables, [0.15, 0.0, 0.2], atol=0.02)
     assert np.allclose(
-        result1.variables,
-        result2.variables,
+        result1.results.variables,
+        result2.results.variables,
         atol=0.0,
         rtol=1e-10,
     )
@@ -98,8 +98,8 @@ def test_pymoo_ineq_nonlinear_constraints(  # ruff: ignore[too-many-positional-a
     result = optimize(
         config, initial_values, eval_func(test_functions, [constraint_function])
     )
-    assert result.variables is not None
-    assert np.allclose(result.variables, [-0.05, 0.0, 0.45], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [-0.05, 0.0, 0.45], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -124,8 +124,8 @@ def test_pymoo_eq_nonlinear_constraints(
         eval_func(test_functions, [constraint_function]),
         constraint_tolerance=1e-4,
     )
-    assert result.variables is not None
-    assert np.allclose(result.variables, [0.25, 0.0, 0.75], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [0.25, 0.0, 0.75], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -147,8 +147,8 @@ def test_pymoo_ineq_nonlinear_constraints_two_sided(
     result = optimize(
         config, initial_values, eval_func(test_functions, [constraint_function])
     )
-    assert result.variables is not None
-    assert np.allclose(result.variables, [-0.1, 0.0, 0.4], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [-0.1, 0.0, 0.4], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -163,8 +163,8 @@ def test_pymoo_le_ge_linear_constraints(
     }
 
     result = optimize(config, initial_values, eval_func(), constraint_tolerance=1e-4)
-    assert result.variables is not None
-    assert np.allclose(result.variables, [-0.05, 0.0, 0.45], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [-0.05, 0.0, 0.45], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -179,8 +179,8 @@ def test_pymoo_eq_linear_constraints(
     }
 
     result = optimize(config, initial_values, eval_func(), constraint_tolerance=1e-4)
-    assert result.variables is not None
-    assert np.allclose(result.variables, [0.25, 0.0, 0.75], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [0.25, 0.0, 0.75], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -195,8 +195,8 @@ def test_pymoo_le_ge_linear_constraints_two_sided(
     }
 
     result = optimize(config, initial_values, eval_func())
-    assert result.variables is not None
-    assert np.allclose(result.variables, [-0.1, 0.0, 0.4], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [-0.1, 0.0, 0.4], atol=0.02)
 
     config["linear_constraints"] = {
         "coefficients": [[1, 0, 1]],
@@ -205,8 +205,8 @@ def test_pymoo_le_ge_linear_constraints_two_sided(
     }
 
     result = optimize(config, initial_values, eval_func())
-    assert result.variables is not None
-    assert np.allclose(result.variables, [-0.1, 0.0, 0.4], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [-0.1, 0.0, 0.4], atol=0.02)
 
 
 @pytest.mark.parametrize("parallel", [False, True])
@@ -238,8 +238,8 @@ def test_pymoo_eq_mixed_constraints(
         eval_func(test_functions, [constraint_function]),
         constraint_tolerance=1e-4,
     )
-    assert result.variables is not None
-    assert np.allclose(result.variables, [0.25, 0.0, 0.75], atol=0.04)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [0.25, 0.0, 0.75], atol=0.04)
 
 
 @pytest.mark.skipif(
@@ -275,8 +275,8 @@ def test_pymoo_constraint_handling(
         eval_func(test_functions, [constraint_function]),
         constraint_tolerance=1e-4,
     )
-    assert result.variables is not None
-    assert np.allclose(result.variables, [-0.05, 0.0, 0.45], atol=0.02)
+    assert result.results is not None
+    assert np.allclose(result.results.variables, [-0.05, 0.0, 0.45], atol=0.02)
 
 
 def test_pymoo_bound_constraints_with_failure(
@@ -289,8 +289,8 @@ def test_pymoo_bound_constraints_with_failure(
     config["optimizer"] = {"max_functions": 1000}
     config["realizations"] = {"realization_min_success": 0}
     result1 = optimize(config, initial_values, eval_func(test_functions))
-    assert result1.variables is not None
-    assert np.allclose(result1.variables, [0.15, 0.0, 0.2], atol=0.02)
+    assert result1.results is not None
+    assert np.allclose(result1.results.variables, [0.15, 0.0, 0.2], atol=0.02)
 
     counter = 0
 
@@ -303,11 +303,11 @@ def test_pymoo_bound_constraints_with_failure(
         return test_functions[0](x, 0)
 
     result2 = optimize(config, initial_values, eval_func((_add_nan, test_functions[1])))
-    assert result2.variables is not None
-    assert np.allclose(result2.variables, [0.15, 0.0, 0.2], atol=0.02)
+    assert result2.results is not None
+    assert np.allclose(result2.results.variables, [0.15, 0.0, 0.2], atol=0.02)
     assert not np.all(
         np.equal(
-            result1.variables,
-            result2.variables,
+            result1.results.variables,
+            result2.results.variables,
         )
     )
