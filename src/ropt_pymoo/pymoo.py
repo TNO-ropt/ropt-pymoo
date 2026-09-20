@@ -161,13 +161,13 @@ class PyMooBackend(Backend):
         reporting levels, so the setting is on or off.
 
     To select an optimizer, set the `method` field within the
-    [`optimizer`][ropt.config.BackendConfig] section of the
+    [`backend`][ropt.config.BackendConfig] section of the
     [`EnOptContext`][ropt.context.EnOptContext] configuration object to the
     desired algorithm's name. The name should be a fully qualified class name
     within the `pymoo.algorithms` module (e.g., `soo.nonconvex.ga.GA`).
 
     For algorithm-specific options, use the `options` dictionary within the
-    [`optimizer`][ropt.config.BackendConfig] section, which will be
+    [`backend`][ropt.config.BackendConfig] section, which will be
     parsed into a [`ParametersConfig`][ropt_pymoo.config.ParametersConfig]
     object.
     """

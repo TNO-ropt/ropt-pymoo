@@ -27,8 +27,8 @@ run. However, there are a few things to consider:
 
 ### Configuration
 
-The algorithm to specify is set by the `method` field in `optimization` section
-of a `ropt` configuration. Futher configuration of `pymoo` algorithms is
+The algorithm to specify is set by the `method` field in the `backend` section
+of a `ropt` configuration. Further configuration of `pymoo` algorithms is
 performed via the `options` field. The following example demonstrates the
 configuration process for a [Genetic
 Algorithm](https://pymoo.org/algorithms/soo/ga.html), derived from the `pymoo`
@@ -63,7 +63,7 @@ res = minimize(
 ```
 
 To configure the equivalent optimization in `ropt`, first set the `method` field
-within the `optimization` section of the `ropt` configuration to the fully
+within the `backend` section of the `ropt` configuration to the fully
 qualified name of the algorithm object in the `pymoo.algorithms` module (e.g.,
 `"soo.nonconvex.ga.GA"`).
 

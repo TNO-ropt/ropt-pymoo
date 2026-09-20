@@ -76,28 +76,15 @@ def function(
 
 
 result = optimize(CONFIG, initial_values, function)
-assert result.variables is not None
-assert result.target_objective is not None
-print(f"  variables: {result.variables}")
-print(f"  objective: {result.target_objective}")
+assert result.results is not None
+assert result.results.target_objective is not None
+print(f"  variables: {result.results.variables}")
+print(f"  objective: {result.results.target_objective}")
 ```
 
 Running this will output the following:
 ```console
 $ python example.py
-=================================================
-n_gen  |  n_eval  |     f_avg     |     f_min    
-=================================================
-     1 |       18 |  1.740556E+02 | -6.000000E+00
-     2 |       38 | -2.300000E+00 | -6.000000E+00
-     3 |       58 | -3.600000E+00 | -6.000000E+00
-     4 |       78 | -4.400000E+00 | -7.000000E+00
-     5 |       98 | -4.450000E+00 | -7.000000E+00
-     6 |      118 | -4.500000E+00 | -7.000000E+00
-     7 |      138 | -4.600000E+00 | -7.000000E+00
-     8 |      158 | -4.600000E+00 | -7.000000E+00
-     9 |      178 | -4.600000E+00 | -7.000000E+00
-    10 |      198 | -4.600000E+00 | -7.000000E+00
-Optimal variables: [3. 7.]
-Optimal objective: -7.0
+  variables: [3. 7.]
+  objective: -7.0
 ```
