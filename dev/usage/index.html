@@ -525,8 +525,8 @@ run. However, there are a few things to consider:</p>
     in the configuration section below.</li>
 </ol>
 <h3 id="configuration">Configuration</h3>
-<p>The algorithm to specify is set by the <code>method</code> field in <code>optimization</code> section
-of a <code>ropt</code> configuration. Futher configuration of <code>pymoo</code> algorithms is
+<p>The algorithm to specify is set by the <code>method</code> field in the <code>backend</code> section
+of a <code>ropt</code> configuration. Further configuration of <code>pymoo</code> algorithms is
 performed via the <code>options</code> field. The following example demonstrates the
 configuration process for a <a href="https://pymoo.org/algorithms/soo/ga.html">Genetic
 Algorithm</a>, derived from the <code>pymoo</code>
@@ -558,7 +558,7 @@ manual, incorporating a penalty constraint. Here is how this is done in <code>py
 </span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>To configure the equivalent optimization in <code>ropt</code>, first set the <code>method</code> field
-within the <code>optimization</code> section of the <code>ropt</code> configuration to the fully
+within the <code>backend</code> section of the <code>ropt</code> configuration to the fully
 qualified name of the algorithm object in the <code>pymoo.algorithms</code> module (e.g.,
 <code>"soo.nonconvex.ga.GA"</code>).</p>
 <p>Next, define the specific algorithm parameters, termination criteria,
