@@ -6,7 +6,7 @@ import copy
 import importlib
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TextIO
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TextIO, override
 
 import numpy as np
 from pymoo.core.problem import Problem
@@ -190,13 +190,14 @@ class PyMooBackend(Backend):
             msg = "The pymoo backend does not support a 'default' method"
             raise ValueError(msg)
 
+    @override
     def start(
         self,
         problem: OptimizationProblem,
         optimizer_callback: OptimizerCallback,
         *,
-        evaluation_policy: Literal["speculative", "separate", "auto"],  # ruff: ignore[unused-method-argument]
-        output_dir: Path | None,  # ruff: ignore[unused-method-argument]
+        evaluation_policy: Literal["speculative", "separate", "auto"],
+        output_dir: Path | None,
     ) -> None:
         """Start the optimization.
 
@@ -245,6 +246,7 @@ class PyMooBackend(Backend):
             verbose=_reports(verbose=self._config.verbose),
         )
 
+    @override
     def validate_options(self) -> None:
         """Validate the options of a given method.
 
