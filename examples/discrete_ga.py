@@ -4,12 +4,12 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from ropt.components.evaluators import (
+from ropt import (
     EvaluationFunctionContext,
     EvaluationFunctionResult,
+    FunctionResults,
+    optimize,
 )
-from ropt.results import FunctionResults
-from ropt.simple import optimize
 
 options = {
     "parameters": {

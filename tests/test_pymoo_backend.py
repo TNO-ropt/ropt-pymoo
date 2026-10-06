@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 import pytest
-from ropt.simple import optimize
+from ropt import optimize
 
 # ruff: file-ignore[boolean-type-hint-positional-argument]
 
