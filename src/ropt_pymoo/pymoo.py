@@ -24,9 +24,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from numpy.typing import NDArray
-    from ropt.backend import OptimizationProblem
+    from ropt.backend import OptimizationProblem, OptimizerCallback
     from ropt.config import BackendConfig
-    from ropt.core import OptimizerCallback
     from ropt.plugins import MethodSpec
 
 _logger = logging.getLogger("ropt.backend.pymoo")
