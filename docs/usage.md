@@ -6,9 +6,10 @@ run. However, there are a few things to consider:
 1.  **Gradient Information:** The plugin does not use gradient information, as
     `pymoo` algorithms typically don't support user-defined gradients. Any
     gradient calculation settings in `ropt` will be ignored.
-2.  **Ignored `ropt` Parameters:** Some standard `ropt` optimization parameters
-    like `max_iterations` and `convergence_tolerance` are not used by this
-    plugin and will have no effect.
+2.  **Stopping Criteria:** Leave `backend.max_iterations` and
+    `backend.convergence_tolerance` unset or `None`; any other value raises a
+    validation error. Configure stopping criteria through
+    `backend.options.termination` instead.
 3.  **Initial Values:** `pymoo` generally ignores initial variable values.
     However, you still need to provide an initial value vector in `ropt` simply
     to define the number of variables; a zero vector is sufficient for this

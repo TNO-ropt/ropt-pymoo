@@ -247,12 +247,22 @@ class PyMooBackend(Backend):
 
     @override
     def validate_options(self) -> None:
-        """Validate the options of a given method.
+        """Validate backend settings and method-specific options.
 
-        See the [ropt.backend.Backend][] abstract base class.
-
-        # noqa
-        """  # ruff: ignore[docstring-missing-exception]
+        Raises:
+            ValueError: If a setting is unsupported, or the method-specific
+                        options are invalid.
+        """
+        for name, value in (
+            ("max_iterations", self._config.max_iterations),
+            ("convergence_tolerance", self._config.convergence_tolerance),
+        ):
+            if value is not None:
+                msg = (
+                    f"The pymoo backend does not support '{name}'; "
+                    "configure stopping criteria in 'options.termination' instead."
+                )
+                raise ValueError(msg)
         if self._config.options is not None:
             _, _, method = self._config.method.rpartition("/")
             if not isinstance(self._config.options, dict):

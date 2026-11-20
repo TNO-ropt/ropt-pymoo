@@ -5,8 +5,10 @@ from typing import Any
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 from ropt import optimize
 from ropt.backend import OptimizerCallbackResult
+from ropt.context import EnOptContext
 
 from ropt_pymoo.pymoo import PyMooBackend
 
@@ -61,6 +63,32 @@ def config_fixture() -> dict[str, Any]:
             "weights": [0.75, 0.25],
         },
     }
+
+
+@pytest.mark.parametrize(
+    ("setting", "value"),
+    [
+        ("max_iterations", 1),
+        ("convergence_tolerance", 0.0),
+        ("convergence_tolerance", 1e-4),
+    ],
+)
+@pytest.mark.parametrize(
+    "external", ["", pytest.param("external/", marks=pytest.mark.external)]
+)
+def test_pymoo_rejects_unsupported_stopping_settings(
+    setting: str, value: float, external: str
+) -> None:
+    with pytest.raises(ValidationError, match=f"does not support '{setting}'"):
+        EnOptContext.model_validate(
+            {
+                "variables": {"variable_count": 1},
+                "backend": {
+                    "method": f"{external}pymoo/soo.nonconvex.nelder.NelderMead",
+                    setting: value,
+                },
+            }
+        )
 
 
 @pytest.mark.parametrize("parallel", [False, True])
