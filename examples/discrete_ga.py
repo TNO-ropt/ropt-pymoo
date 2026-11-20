@@ -89,7 +89,7 @@ def report(result: FunctionResults) -> None:
     Args:
         result: The result.
     """
-    if result.functions is not None:
+    if result.aggregates is not None:
         print(f"  variables: {result.variables}")
         print(f"  objective: {result.target_objective}\n")
 
